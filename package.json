@@ -1,0 +1,88 @@
+{
+  "name": "innovalombia-common-backend-library",
+  "version": "0.0.9",
+  "description": "",
+  "main": "dist/index.js",
+  "typings": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json && tsc-alias -p tsconfig.build.json",
+    "clean": "rimraf dist/* && rimraf coverage",
+    "coverage": "nyc -r lcov -r text -e .ts -x \"test/**/*.spec.ts\" npm run test",
+    "lint": "eslint . --ext .ts",
+    "lint:fix": "eslint '*/**/*.ts' --quiet --fix",
+    "login": "aws codeartifact login --tool npm --repository innovalombia-backend-libraries --domain innovalombia --domain-owner 961545628224 --region us-east-2",
+    "prettier": "prettier '*/**/*.ts' --check",
+    "prettier:write": "prettier '*/**/*.ts' --write",
+    "prepare": "husky install",
+    "pre-commit": "npm run prettier:write && npm run lint:fix",
+    "test": "ts-node -r tsconfig-paths/register node_modules/jasmine/bin/jasmine --config=jasmine.json",
+    "up": "npm version patch",
+    "upload": "npm run build && npm publish"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@gitlab.com/innovalombia/backend/innovalombia-common-backend-library.git"
+  },
+  "keywords": [
+    "typescript",
+    "library"
+  ],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://gitlab.com/innovalombia/backend/innovalombia-backend-libraries/issues"
+  },
+  "homepage": "https://gitlab.com/innovalombia/backend/innovalombia-common-backend-library#readme",
+  "engines": {
+    "node": ">=18.18.0 <=20.9.0"
+  },
+  "dependencies": {
+    "axios": "^1.6.2",
+    "inversify": "^6.0.2",
+    "luxon": "^3.0.1",
+    "winston": "^3.11.0"
+  },
+  "peerDependencies": {
+    "@aws-sdk/client-ses": "^3.425.0",
+    "@aws-sdk/client-s3": "^3.425.0",
+    "@aws-sdk/s3-request-presigner": "^3.425.0",
+    "crypto": "^1.0.1",
+    "decimal.js": "^10.4.3",
+    "numeral": "^2.0.6",
+    "yaml": "^2.3.3"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^17.2.0",
+    "@commitlint/config-conventional": "^17.2.0",
+    "@istanbuljs/nyc-config-typescript": "^1.0.1",
+    "@trivago/prettier-plugin-sort-imports": "^4.2.1",
+    "@types/aws-lambda": "^8.10.72",
+    "@types/jasmine": "^3.6.4",
+    "@types/luxon": "^3.3.3",
+    "@types/node": "^20.8.9",
+    "@types/numeral": "^2.0.2",
+    "@typescript-eslint/eslint-plugin": "^7.11.0",
+    "@typescript-eslint/parser": "^7.11.0",
+    "aws-lambda": "^1.0.6",
+    "aws-sdk-client-mock": "^3.0.0",
+    "aws-sdk-mock": "^5.1.0",
+    "axios-mock-adapter": "^1.21.1",
+    "eslint": "^8.44.0",
+    "eslint-config-prettier": "^8.3.0",
+    "eslint-plugin-import": "^2.25.4",
+    "eslint-plugin-jasmine": "^4.1.2",
+    "eslint-plugin-prettier": "^5.0.0",
+    "eslint-plugin-sort-destructure-keys": "^1.5.0",
+    "husky": "^8.0.2",
+    "jasmine": "^3.6.4",
+    "nyc": "^15.1.0",
+    "prettier": "^3.0.0",
+    "reflect-metadata": "^0.1.13",
+    "rimraf": "^3.0.2",
+    "ts-mocks": "^3.0.1",
+    "ts-node": "^10.0.0",
+    "tsc-alias": "^1.8.2",
+    "tsconfig-paths": "^4.2.0",
+    "typescript": "^5.4.0"
+  }
+}
