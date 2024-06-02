@@ -1,6 +1,6 @@
 {
-  "name": "innovalombia-common-backend-library",
-  "version": "0.0.9",
+  "name": "inversify-utils-kit",
+  "version": "0.0.1",
   "description": "",
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
@@ -10,7 +10,6 @@
     "coverage": "nyc -r lcov -r text -e .ts -x \"test/**/*.spec.ts\" npm run test",
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint '*/**/*.ts' --quiet --fix",
-    "login": "aws codeartifact login --tool npm --repository innovalombia-backend-libraries --domain innovalombia --domain-owner 961545628224 --region us-east-2",
     "prettier": "prettier '*/**/*.ts' --check",
     "prettier:write": "prettier '*/**/*.ts' --write",
     "prepare": "husky install",
@@ -21,7 +20,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+ssh://git@gitlab.com/innovalombia/backend/innovalombia-common-backend-library.git"
+    "url": "git+ssh://git@gitlab.com/innovalombia/backend/inversify-utils-kit.git"
   },
   "keywords": [
     "typescript",
@@ -32,7 +31,7 @@
   "bugs": {
     "url": "https://gitlab.com/innovalombia/backend/innovalombia-backend-libraries/issues"
   },
-  "homepage": "https://gitlab.com/innovalombia/backend/innovalombia-common-backend-library#readme",
+  "homepage": "https://gitlab.com/innovalombia/backend/inversify-utils-kit#readme",
   "engines": {
     "node": ">=18.18.0 <=20.9.0"
   },

@@ -14,7 +14,7 @@ Common library with all adapters
 -   Install package
 
 ```
-npm i @innovalombia/inversify-utils-kit
+npm i inversify-utils-kit
 ```
 
 
