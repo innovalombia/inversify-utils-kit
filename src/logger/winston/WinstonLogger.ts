@@ -1,13 +1,12 @@
 /* eslint-disable @typescript-eslint/explicit-module-boundary-types */
-import { inject, injectable } from 'inversify';
+import { inject, injectable, optional } from 'inversify';
 import winston, { Logger as LoggerWinston, format } from 'winston';
 
 import {
     COLORS_LOGGER_CONST_TYPE,
-    TIMEZONE_CONST_TYPE
-} from '@common/constants';
-
-import { Logger } from '../Logger';
+    Logger,
+    TIMEZONE_LOGGER_CONST_TYPE
+} from '../Logger';
 
 const SETTINGS = {
     LOG_LEVEL: 'debug',
@@ -19,9 +18,12 @@ export class WinstonLogger implements Logger {
     private LOGGER: LoggerWinston;
 
     constructor(
-        @inject(TIMEZONE_CONST_TYPE)
+        @inject(TIMEZONE_LOGGER_CONST_TYPE)
+        @optional()
         private TIMEZONE: string = 'America/Bogota',
-        @inject(COLORS_LOGGER_CONST_TYPE) COLORS_OUTPUT: boolean = false
+        @inject(COLORS_LOGGER_CONST_TYPE)
+        @optional()
+        COLORS_OUTPUT: boolean = false
     ) {
         const formatters: winston.Logform.Format[] = [
             //this.generateCustomTraceFormat(),

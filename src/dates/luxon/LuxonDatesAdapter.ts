@@ -1,9 +1,11 @@
-import { injectable } from 'inversify';
+import { inject, injectable, optional } from 'inversify';
 import { DateTime } from 'luxon';
 
 import {
     DatesAdapter,
-    DatesAdapterCurrentDatePlusToLocalDateInput
+    DatesAdapterCurrentDatePlusToLocalDateInput,
+    LANG_DATES_ADAPTER_CONST_TYPE,
+    TIMEZONE_DATES_ADAPTER_CONST_TYPE
 } from '../DatesAdapter';
 
 const SETTINGS = {
@@ -12,18 +14,19 @@ const SETTINGS = {
 
 @injectable()
 export class LuxonDatesAdapter implements DatesAdapter {
-    timeZone: string;
-    lang: string;
-    constructor(timeZone: string = 'America/Bogota', lang: string = 'es') {
-        this.timeZone = timeZone;
-        this.lang = lang;
-    }
-    static instance = new LuxonDatesAdapter();
+    constructor(
+        @inject(TIMEZONE_DATES_ADAPTER_CONST_TYPE)
+        @optional()
+        private TIMEZONE: string = 'America/Bogota',
+        @inject(LANG_DATES_ADAPTER_CONST_TYPE)
+        @optional()
+        private LANG: string = 'es'
+    ) {}
 
     fromUnix(input: string): { posix: number; type: string } {
-        if (!/^\d{10}(?:\d{3})?(?:\d{9})?$/.test(input)) {
+        if (!/^\d{10}(?:\d{3})?(?:\d{6})?(?:\d{9})?$/.test(input)) {
             throw new Error(
-                'Invalid posix, posix should be have a number with 10, 13 or 19 digits'
+                'Invalid posix, posix should be have a number with 10, 13, 16 or 19 digits'
             );
         }
         let base = Number(input);
@@ -32,6 +35,10 @@ export class LuxonDatesAdapter implements DatesAdapter {
         if (input.length === 10) {
             base = base * 1000;
             type = 'seconds';
+        }
+        if (input.length === 16) {
+            base = base / 1000;
+            type = 'microseconds';
         } else if (input.length === 19) {
             base = base / 1000000;
             type = 'nanoseconds';
@@ -52,7 +59,7 @@ export class LuxonDatesAdapter implements DatesAdapter {
     }
 
     toLocal(epoch: number): string {
-        return DateTime.fromMillis(epoch).setLocale(this.timeZone).toISO();
+        return DateTime.fromMillis(epoch).setLocale(this.TIMEZONE).toISO();
     }
 
     fromDateUTCtoLocalDate(
@@ -80,9 +87,6 @@ export class LuxonDatesAdapter implements DatesAdapter {
         return DateTime.now().toMillis();
     }
 
-    fromUTC(date: string): number {
-        return DateTime.fromJSDate(new Date(date)).toMillis();
-    }
     fromString(date: string): number {
         const dateTime = DateTime.fromJSDate(new Date(date));
         return dateTime.toMillis();
@@ -93,7 +97,7 @@ export class LuxonDatesAdapter implements DatesAdapter {
     }
 
     toFormat(epoch: number, format = SETTINGS.DEFAULT_DATE_FORMAT): string {
-        return DateTime.fromMillis(epoch).setLocale(this.lang).toFormat(format);
+        return DateTime.fromMillis(epoch).setLocale(this.LANG).toFormat(format);
     }
 
     toISO(epoch: number): string {
