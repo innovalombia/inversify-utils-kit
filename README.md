@@ -17,12 +17,9 @@ Common library with all adapters
 npm i inversify-utils-kit
 ```
 
-
 ## Use 🧑‍🔧 <a name="use"></a>
 
-
 ## Manage repository 🤳 <a name="manage-repository"></a>
-
 
 -   Install dependencies
 
@@ -72,6 +69,12 @@ npm run build
 npm run up
 ```
 
+-   Login
+
+```
+export NPM_AUTH_TOKEN=********* && npm login
+```
+
 -   Publish new version
 
 ```
@@ -114,7 +117,7 @@ npm publish
 | 📦️   | `:package:`                                                                                                                                                                                       | Add or update compiled files or packages.                                                                                                                                                                                                                                                                                                                                       |
 | 👽️   | `:alien:`                                                                                                                                                                                         | Update code due to external API changes.                                                                                                                                                                                                                                                                                                                                        |
 | 🍱    | `:bento:`                                                                                                                                                                                         | Add or update assets.                                                                                                                                                                                                                                                                                                                                                           |
-| ♿️   | `:wheelchair:`                                                                                                                                                                                    | Improve accessibility.                                                                                                                                                                                                                                                                                                                                                          |
+| ♿️    | `:wheelchair:`                                                                                                                                                                                    | Improve accessibility.                                                                                                                                                                                                                                                                                                                                                          |
 | 💬    | `:speech_balloon:`                                                                                                                                                                                | Add or update text and literals.                                                                                                                                                                                                                                                                                                                                                |
 | 🗃️    | `:card_file_box:`                                                                                                                                                                                 | Perform database related changes.                                                                                                                                                                                                                                                                                                                                               |
 | 🚸    | `:children_crossing:`                                                                                                                                                                             | Improve user experience / usability.                                                                                                                                                                                                                                                                                                                                            |
