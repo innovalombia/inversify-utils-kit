@@ -53,26 +53,6 @@ export class WinstonLogger implements Logger {
         });
     }
 
-    // private getCallerInfo(): string {
-    //     try {
-    //         throw new Error();
-    //     } catch (error) {
-    //         const stackLines = error.stack?.split('\n');
-    //         if (stackLines && stackLines.length >= 4) {
-    //             const callerLine = stackLines[3].trim();
-    //             return callerLine;
-    //         }
-    //     }
-    //     return 'Unknown caller';
-    // }
-
-    // private generateCustomTraceFormat(): winston.Logform.Format {
-    //     return format((info: winston.Logform.TransformableInfo) => {
-    //         info.trace = this.getCallerInfo();
-    //         return info;
-    //     })();
-    // }
-
     private generateCustomOrderFormat(): winston.Logform.Format {
         return format((info) => {
             const { level, message, trace, ...rest } = info;
