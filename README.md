@@ -69,16 +69,16 @@ npm run build
 npm run up
 ```
 
--   Login
+-   Setup token
 
 ```
-export NPM_AUTH_TOKEN=********* && npm login
+export NPM_AUTH_TOKEN=*********
 ```
 
--   Publish new version
+-   Upload new version
 
 ```
-npm publish
+npm run upload
 ```
 
 ## Versioning 🔢 <a name="versioning"></a>
