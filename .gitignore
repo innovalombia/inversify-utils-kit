@@ -334,6 +334,7 @@ report/
 temp/
 
 # Configuration
+.npmrc
 .env
 .env.dev
 .env.stg
