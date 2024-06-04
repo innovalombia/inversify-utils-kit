@@ -1,5 +1,11 @@
+/* eslint-disable @typescript-eslint/explicit-module-boundary-types */
+import 'reflect-metadata';
+
+import { injectable } from 'inversify';
+
 import { JSONOutputModel, JsonAdapter } from '../JsonAdapter';
 
+@injectable()
 export class DefaultJsonAdapter implements JsonAdapter {
     parseStringToJson(input: string): JSONOutputModel {
         try {
