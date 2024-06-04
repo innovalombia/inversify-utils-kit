@@ -34,4 +34,22 @@ describe('LuxonDatesAdapter Test Suite', () => {
             expect(result !== 'Invalid DateTime').toBeTruthy();
         });
     });
+
+    describe('test for fromFormat', () => {
+        it('should parse from format in utc', async () => {
+            const result = adapter.fromFormat(
+                '2024-02-01 09:00:00',
+                'yyyy-MM-dd HH:mm:ss'
+            );
+            expect(result).toBe(1706778000000);
+        });
+        it('should parse from format in local', async () => {
+            const result = adapter.fromFormat(
+                '2024-02-01 09:00:00',
+                'yyyy-MM-dd HH:mm:ss',
+                true
+            );
+            expect(result).toBe(1706796000000);
+        });
+    });
 });

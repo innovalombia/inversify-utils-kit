@@ -1,6 +1,6 @@
 {
   "name": "inversify-utils-kit",
-  "version": "0.0.6",
+  "version": "0.0.7",
   "description": "",
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
@@ -37,15 +37,13 @@
   },
   "dependencies": {
     "inversify": "^6.0.2",
-    "luxon": "^3.0.1",
-    "winston": "^3.11.0"
+    "reflect-metadata": "^0.2.2"
   },
   "peerDependencies": {
-    "crypto": "^1.0.1",
     "decimal.js": "^10.4.3",
     "numeral": "^2.0.6",
     "yaml": "^2.3.3",
-    "reflect-metadata": "^0.2.2"
+    "luxon": "^3.0.1"
   },
   "devDependencies": {
     "@commitlint/cli": "^17.2.0",

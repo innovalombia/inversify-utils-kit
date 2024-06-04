@@ -7,6 +7,7 @@ import { DateTime } from 'luxon';
 import {
     DatesAdapter,
     DatesAdapterCurrentDatePlusToLocalDateInput,
+    InvalidDateError,
     LANG_DATES_ADAPTER_CONST_TYPE,
     TIMEZONE_DATES_ADAPTER_CONST_TYPE
 } from '../DatesAdapter';
@@ -20,7 +21,7 @@ export class LuxonDatesAdapter implements DatesAdapter {
     constructor(
         @inject(TIMEZONE_DATES_ADAPTER_CONST_TYPE)
         @optional()
-        private TIMEZONE: string = 'America/Bogota',
+        public TIMEZONE: string = 'America/Bogota',
         @inject(LANG_DATES_ADAPTER_CONST_TYPE)
         @optional()
         private LANG: string = 'es'
@@ -47,12 +48,12 @@ export class LuxonDatesAdapter implements DatesAdapter {
             type = 'nanoseconds';
         }
         const date = new Date(base);
-        const time = DateTime.fromJSDate(date);
-        if (!time.isValid) {
-            throw new Error('Invalid date');
+        const dateTime = DateTime.fromJSDate(date);
+        if (!dateTime.isValid) {
+            throw new InvalidDateError();
         }
         return {
-            posix: time.toMillis(),
+            posix: dateTime.toMillis(),
             type
         };
     }
@@ -90,13 +91,34 @@ export class LuxonDatesAdapter implements DatesAdapter {
         return DateTime.now().toMillis();
     }
 
+    fromFormat(input: string, format: string, isLocal = false): number {
+        let dateTime = DateTime.fromFormat(input, format, {
+            zone: isLocal ? this.TIMEZONE : 'UTC'
+        });
+        console.log(dateTime);
+        if (!dateTime.isValid) {
+            throw new InvalidDateError();
+        }
+        if (isLocal) {
+            dateTime = dateTime.setZone(this.TIMEZONE);
+        }
+        return dateTime.toMillis();
+    }
+
     fromString(date: string): number {
         const dateTime = DateTime.fromJSDate(new Date(date));
+        if (!dateTime.isValid) {
+            throw new InvalidDateError();
+        }
         return dateTime.toMillis();
     }
 
     fromISO(date: string): number {
-        return DateTime.fromISO(date).toMillis();
+        const dateTime = DateTime.fromISO(date);
+        if (!dateTime.isValid) {
+            throw new InvalidDateError();
+        }
+        return dateTime.toMillis();
     }
 
     toFormat(epoch: number, format = SETTINGS.DEFAULT_DATE_FORMAT): string {

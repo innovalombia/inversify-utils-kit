@@ -5,7 +5,23 @@ export type DatesAdapterCurrentDatePlusToLocalDateInput = {
     seconds?: number;
 };
 
+export class DatesAdapterError extends Error {
+    constructor(message: string = 'DatesAdapterError') {
+        super(message);
+        this.name = this.constructor.name;
+        if (typeof Error.captureStackTrace === 'function') {
+            Error.captureStackTrace(this, this.constructor);
+        } else {
+            this.stack = new Error(message).stack;
+        }
+    }
+}
+
+export class InvalidDateError extends DatesAdapterError {}
+
 export interface DatesAdapter {
+    TIMEZONE: string;
+
     fromDateUTCtoLocalDate(utcDate: string, format?: string): string;
     fromDateISOtoLocalDate(utcDate: string, format?: string): string;
     currentDatePlusToLocalDate(
@@ -13,6 +29,7 @@ export interface DatesAdapter {
         format?: string
     ): string;
     now(): number;
+    fromFormat(input: string, format: string, isLocal?: boolean): number;
     fromString(input: string): number;
     fromUnix(input: string): { posix: number; type: string };
     toUnix(epoch: number): number;
