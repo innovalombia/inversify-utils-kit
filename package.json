@@ -1,6 +1,6 @@
 {
   "name": "inversify-utils-kit",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "description": "",
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
@@ -44,7 +44,8 @@
     "crypto": "^1.0.1",
     "decimal.js": "^10.4.3",
     "numeral": "^2.0.6",
-    "yaml": "^2.3.3"
+    "yaml": "^2.3.3",
+    "reflect-metadata": "^0.1.13"
   },
   "devDependencies": {
     "@commitlint/cli": "^17.2.0",
