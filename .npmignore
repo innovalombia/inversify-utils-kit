@@ -7,6 +7,7 @@
 .prettierignore
 .prettierrc.json
 .vscode
+.npmrc.example
 .npmrc
 .nvmrc
 jasmine.json
@@ -16,3 +17,4 @@ src
 node_modules
 **/temp/*
 **/resources/**
+sonar-project.properties
