@@ -35,6 +35,7 @@ export interface DatesAdapter {
     toUnix(epoch: number): number;
     toFormat(input: number, format?: string): string;
     toUTC(epoch: number): string;
+    toISO(epoch: number): string;
     minus(
         epoch: number,
         payload: DatesAdapterCurrentDatePlusToLocalDateInput

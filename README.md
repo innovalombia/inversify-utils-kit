@@ -1,6 +1,6 @@
 # Inversify-utils-kit
 
-Common library with all adapters
+Some utilities to manage dates, json, currencies formatters and strings using injectable adapters with inversify.
 
 ## Index
 
