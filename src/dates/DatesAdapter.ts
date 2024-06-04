@@ -32,10 +32,11 @@ export interface DatesAdapter {
     fromFormat(input: string, format: string, isLocal?: boolean): number;
     fromString(input: string): number;
     fromUnix(input: string): { posix: number; type: string };
-    toUnix(epoch: number): number;
     toFormat(input: number, format?: string): string;
     toUTC(epoch: number): string;
     toISO(epoch: number): string;
+    toUnix(epoch: number): number;
+    toLocal(epoch: number): string;
     minus(
         epoch: number,
         payload: DatesAdapterCurrentDatePlusToLocalDateInput

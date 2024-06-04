@@ -58,14 +58,6 @@ export class LuxonDatesAdapter implements DatesAdapter {
         };
     }
 
-    toUTC(epoch: number): string {
-        return DateTime.fromMillis(epoch).toUTC().toISO();
-    }
-
-    toLocal(epoch: number): string {
-        return DateTime.fromMillis(epoch).setLocale(this.TIMEZONE).toISO();
-    }
-
     fromDateUTCtoLocalDate(
         utcDate: string,
         format = SETTINGS.DEFAULT_DATE_FORMAT
@@ -125,12 +117,20 @@ export class LuxonDatesAdapter implements DatesAdapter {
         return DateTime.fromMillis(epoch).setLocale(this.LANG).toFormat(format);
     }
 
+    toUTC(epoch: number): string {
+        return DateTime.fromMillis(epoch).toUTC().toISO();
+    }
+
     toISO(epoch: number): string {
         return DateTime.fromMillis(epoch).toISO();
     }
 
     toUnix(epoch: number): number {
         return DateTime.fromMillis(epoch).toUnixInteger();
+    }
+
+    toLocal(epoch: number): string {
+        return DateTime.fromMillis(epoch).setLocale(this.TIMEZONE).toISO();
     }
 
     plus(
