@@ -16,3 +16,5 @@ export interface JsonAdapter {
     deserializeJson(input: string): JSONOutputModel;
     serializeJson(input: any, escapeQuotes?: boolean): JSONOutputModel<string>;
 }
+
+export const JSON_ADAPTER_TYPE = Symbol('JSON_ADAPTER_TYPE');
