@@ -6,6 +6,7 @@
         "inversify",
         "Millis",
         "PAYU",
+        "posix",
         "rewiremock"
     ]
 }
