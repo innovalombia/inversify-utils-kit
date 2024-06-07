@@ -2,11 +2,13 @@
     "cSpell.words": [
         "apigw",
         "copyfiles",
+        "fdescribe",
         "GWQS",
         "inversify",
         "Millis",
         "PAYU",
         "posix",
-        "rewiremock"
+        "rewiremock",
+        "xdescribe"
     ]
 }

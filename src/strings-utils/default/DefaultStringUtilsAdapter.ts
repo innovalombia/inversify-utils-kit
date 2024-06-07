@@ -1,5 +1,8 @@
+import { injectable } from 'inversify';
+
 import { StringCases, StringUtilsAdapter } from '../StringUtilsAdapter';
 
+@injectable()
 export class DefaultStringUtilsAdapter implements StringUtilsAdapter {
     PASCAL_CASE_REGEX = /^([A-Z]{1,}[a-z]{0,})+([A-Z]{1,}[a-z]{0,})*$/;
     CAMEL_CASE_REGEX = /^[a-z]+([A-Z][a-z]*)*$/;
@@ -28,18 +31,42 @@ export class DefaultStringUtilsAdapter implements StringUtilsAdapter {
         return word.charAt(0).toUpperCase() + word.slice(1);
     }
 
-    private regexToArray(input: string, regex: RegExp): string[] {
+    private wordToWord(word: string): string[] {
+        return [word];
+    }
+
+    private regexToArrayString(input: string, regex: RegExp): string[] {
         return input
             .match(regex)
             .filter(Boolean)
             .map((word: string) => word.toLowerCase());
     }
 
-    camelCaseToArray(input: string) {
-        return this.regexToArray(input, this.CAMEL_CASE_REGEX);
+    camelCaseToArrayString(word: string) {
+        return word
+            .match(/([A-Z]?[^A-Z]*)/g)
+            .filter(Boolean)
+            .map((word: string) => word.toLowerCase());
     }
 
-    checkTextCase(word: string): StringCases | null {
+    snakeCaseToArrayString(word: string) {
+        return word
+            .toLowerCase()
+            .split('_')
+            .map((word) => word.toLowerCase());
+    }
+
+    pascalCaseToArrayString(word: string) {
+        return word.split(/(?=[A-Z])/).map((word) => word.toLowerCase());
+    }
+    kebabCaseToArrayString(word: string) {
+        return word
+            .toLowerCase()
+            .split('-')
+            .map((word) => word.toLowerCase());
+    }
+
+    checkStringCase(word: string): StringCases | null {
         if (word.includes(' ')) {
             return null;
         }
@@ -60,5 +87,25 @@ export class DefaultStringUtilsAdapter implements StringUtilsAdapter {
             }
         }
         return null;
+    }
+
+    _checkLanguageStringCase(word: string): StringCases | null {
+        const stringCase = this.checkStringCase(word);
+        if (!stringCase || stringCase in [StringCases.MONEY_CASE]) return null;
+        return stringCase;
+    }
+
+    textCaseToArrayString(word: string): string[] {
+        const stringCase = this._checkLanguageStringCase(word);
+        const mapFunctions = {
+            [StringCases.LOWER_SNAKE_CASE]: this.snakeCaseToArrayString,
+            [StringCases.UPPER_SNAKE_CASE]: this.snakeCaseToArrayString,
+            [StringCases.CAMEL_CASE]: this.camelCaseToArrayString,
+            [StringCases.KEBAB_CASE]: this.kebabCaseToArrayString,
+            [StringCases.PASCAL_CASE]: this.pascalCaseToArrayString
+        };
+        const handler: (w: string) => string[] =
+            mapFunctions[stringCase] || this.wordToWord;
+        return handler(word);
     }
 }
