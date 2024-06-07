@@ -1,6 +1,6 @@
 {
   "name": "inversify-utils-kit",
-  "version": "0.0.9",
+  "version": "0.1.0",
   "description": "Some utilities to manage dates, json, currencies formatters and strings using injectable adapters with inversify.",
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
@@ -50,7 +50,6 @@
     "@commitlint/config-conventional": "^17.2.0",
     "@istanbuljs/nyc-config-typescript": "^1.0.1",
     "@trivago/prettier-plugin-sort-imports": "^4.2.1",
-    "@types/aws-lambda": "^8.10.72",
     "@types/jasmine": "^3.6.4",
     "@types/luxon": "^3.3.3",
     "@types/node": "^20.8.9",

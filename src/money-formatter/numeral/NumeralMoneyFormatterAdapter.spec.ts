@@ -1,12 +1,12 @@
 import 'reflect-metadata';
 
-import { NumeralMoneyAdapter } from './NumeralMoneyAdapter';
+import { NumeralMoneyFormatterAdapter } from './NumeralMoneyFormatterAdapter';
 
-describe('NumeralMoneyAdapter Test Suite', () => {
-    let adapter: NumeralMoneyAdapter;
+describe('NumeralMoneyFormatterAdapter Test Suite', () => {
+    let adapter: NumeralMoneyFormatterAdapter;
 
     beforeEach(() => {
-        adapter = new NumeralMoneyAdapter();
+        adapter = new NumeralMoneyFormatterAdapter();
     });
 
     describe('test for toMoneyFormat', () => {

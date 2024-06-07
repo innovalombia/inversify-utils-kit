@@ -3,10 +3,10 @@ import 'reflect-metadata';
 import { injectable } from 'inversify';
 import numeral from 'numeral';
 
-import { MoneyAdapter } from '../MoneyAdapter';
+import { MoneyFormatterAdapter } from '../MoneyFormatterAdapter';
 
 @injectable()
-export class NumeralMoneyAdapter implements MoneyAdapter {
+export class NumeralMoneyFormatterAdapter implements MoneyFormatterAdapter {
     toMoneyFormat(value: number): string {
         return numeral(value).format('$ 0,0[.]00');
     }
