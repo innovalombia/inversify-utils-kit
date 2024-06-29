@@ -1,6 +1,9 @@
 import 'reflect-metadata';
 
-import { StringCases } from '../StringUtilsAdapter';
+import {
+    CannotBeDeterminedStringCase,
+    StringCases
+} from '../StringUtilsAdapter';
 import { DefaultStringUtilsAdapter } from './DefaultStringUtilsAdapter';
 
 describe('DefaultStringUtilsAdapter Test Suite', () => {
@@ -25,6 +28,18 @@ describe('DefaultStringUtilsAdapter Test Suite', () => {
         it('should return success result', async () => {
             const result = adapter.toSimpleCapitalize('this is a example');
             expect(result).toBe('This is a example');
+        });
+    });
+    describe('test for textCaseToAllCases', () => {
+        it('should return success result', async () => {
+            const result = adapter.textCaseToAllCases('loan-simple-event');
+            expect(result).toEqual({
+                camelCase: 'loanSimpleEvent',
+                kebabCase: 'loan-simple-event',
+                lowerSnakeCase: 'loan_simple_event',
+                upperSnakeCase: 'LOAN_SIMPLE_EVENT',
+                pascalCase: 'LoanSimpleEvent'
+            });
         });
     });
 
@@ -62,8 +77,9 @@ describe('DefaultStringUtilsAdapter Test Suite', () => {
             expect(result).toBe(StringCases.NUMBER_CASE);
         });
         it('should no identify case', async () => {
-            const result = adapter.checkStringCase('UPPER_CASE_EXAMPLE_a');
-            expect(result).toBe(null);
+            expect(() => {
+                adapter.checkStringCase('UPPER_CASE_EXAMPLE_a');
+            }).toThrowError(CannotBeDeterminedStringCase);
         });
     });
 

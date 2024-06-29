@@ -1,6 +1,11 @@
 import { injectable } from 'inversify';
 
-import { StringCases, StringUtilsAdapter } from '../StringUtilsAdapter';
+import {
+    AllCasesResult,
+    CannotBeDeterminedStringCase,
+    StringCases,
+    StringUtilsAdapter
+} from '../StringUtilsAdapter';
 
 @injectable()
 export class DefaultStringUtilsAdapter implements StringUtilsAdapter {
@@ -26,7 +31,6 @@ export class DefaultStringUtilsAdapter implements StringUtilsAdapter {
             .toLowerCase()
             .replace(/(^\w{1})|(\s+\w{1})/g, (letter) => letter.toUpperCase());
     }
-
     toSimpleCapitalize(word: string): string {
         return word.charAt(0).toUpperCase() + word.slice(1);
     }
@@ -41,32 +45,66 @@ export class DefaultStringUtilsAdapter implements StringUtilsAdapter {
             .filter(Boolean)
             .map((word: string) => word.toLowerCase());
     }
-
-    camelCaseToArrayString(word: string) {
+    private arrayStringToCamelCase(arrayString: string[]): string {
+        return arrayString
+            .map((word, index) => {
+                if (index === 0) {
+                    return word;
+                }
+                return this.toSimpleCapitalize(word);
+            })
+            .join('');
+    }
+    private arrayStringToSnakeCase(arrayString: string[]): string {
+        return arrayString.join('_');
+    }
+    private arrayStringToPascalCase(arrayString: string[]): string {
+        return arrayString
+            .map((word) => this.toSimpleCapitalize(word))
+            .join('');
+    }
+    private arrayStringToKebabCase(arrayString: string[]): string {
+        return arrayString.join('-');
+    }
+    textCaseToCamelCase(word: string): string {
+        const arrayString = this.textCaseToArrayString(word);
+        return this.arrayStringToCamelCase(arrayString);
+    }
+    textCaseToSnakeCase(word: string, formatUpper = false): string {
+        const arrayString = this.textCaseToArrayString(word);
+        const newWord = this.arrayStringToSnakeCase(arrayString);
+        return formatUpper ? newWord.toUpperCase() : newWord;
+    }
+    textCaseToPascalCase(word: string): string {
+        const arrayString = this.textCaseToArrayString(word);
+        return this.arrayStringToPascalCase(arrayString);
+    }
+    textCaseToKebabCase(word: string): string {
+        const arrayString = this.textCaseToArrayString(word);
+        return this.arrayStringToKebabCase(arrayString);
+    }
+    camelCaseToArrayString(word: string): string[] {
         return word
             .match(/([A-Z]?[^A-Z]*)/g)
             .filter(Boolean)
             .map((word: string) => word.toLowerCase());
     }
-
-    snakeCaseToArrayString(word: string) {
+    snakeCaseToArrayString(word: string): string[] {
         return word
             .toLowerCase()
             .split('_')
             .map((word) => word.toLowerCase());
     }
-
-    pascalCaseToArrayString(word: string) {
+    pascalCaseToArrayString(word: string): string[] {
         return word.split(/(?=[A-Z])/).map((word) => word.toLowerCase());
     }
-    kebabCaseToArrayString(word: string) {
+    kebabCaseToArrayString(word: string): string[] {
         return word
             .toLowerCase()
             .split('-')
             .map((word) => word.toLowerCase());
     }
-
-    checkStringCase(word: string): StringCases | null {
+    _checkStringCase(word: string): StringCases | null {
         if (word.includes(' ')) {
             return null;
         }
@@ -88,15 +126,23 @@ export class DefaultStringUtilsAdapter implements StringUtilsAdapter {
         }
         return null;
     }
-
+    checkStringCase(word: string): StringCases {
+        const result = this._checkStringCase(word);
+        if (result === null) {
+            throw new CannotBeDeterminedStringCase();
+        }
+        return result;
+    }
     _checkLanguageStringCase(word: string): StringCases | null {
-        const stringCase = this.checkStringCase(word);
+        const stringCase = this._checkStringCase(word);
         if (!stringCase || stringCase in [StringCases.MONEY_CASE]) return null;
         return stringCase;
     }
-
     textCaseToArrayString(word: string): string[] {
         const stringCase = this._checkLanguageStringCase(word);
+        if (!stringCase) {
+            return this.wordToWord(word);
+        }
         const mapFunctions = {
             [StringCases.LOWER_SNAKE_CASE]: this.snakeCaseToArrayString,
             [StringCases.UPPER_SNAKE_CASE]: this.snakeCaseToArrayString,
@@ -107,5 +153,39 @@ export class DefaultStringUtilsAdapter implements StringUtilsAdapter {
         const handler: (w: string) => string[] =
             mapFunctions[stringCase] || this.wordToWord;
         return handler(word);
+    }
+    textCaseToAllCases(word: string): AllCasesResult {
+        const arrayString = this.textCaseToArrayString(word);
+        let camelCase: string = '';
+        let kebabCase: string = '';
+        let lowerSnakeCase: string = '';
+        let upperSnakeCase: string = '';
+        let pascalCase: string = '';
+
+        arrayString.forEach((value, index) => {
+            const valueUpper = value.toUpperCase();
+            const valueCapitalize = this.toSimpleCapitalize(value);
+            if (index === 0) {
+                camelCase = value;
+                kebabCase = value;
+                lowerSnakeCase = value;
+                upperSnakeCase = valueUpper;
+                pascalCase = valueCapitalize;
+                return;
+            }
+            camelCase = `${camelCase}${valueCapitalize}`;
+            kebabCase = `${kebabCase}-${value}`;
+            lowerSnakeCase = `${lowerSnakeCase}_${value}`;
+            upperSnakeCase = `${upperSnakeCase}_${valueUpper}`;
+            pascalCase = `${pascalCase}${valueCapitalize}`;
+        });
+
+        return {
+            camelCase,
+            kebabCase,
+            lowerSnakeCase,
+            pascalCase,
+            upperSnakeCase
+        };
     }
 }

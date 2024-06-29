@@ -87,7 +87,6 @@ export class LuxonDatesAdapter implements DatesAdapter {
         let dateTime = DateTime.fromFormat(input, format, {
             zone: isLocal ? this.TIMEZONE : 'UTC'
         });
-        console.log(dateTime);
         if (!dateTime.isValid) {
             throw new InvalidDateError();
         }
