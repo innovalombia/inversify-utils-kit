@@ -10,11 +10,15 @@ import {
 
 @injectable()
 export class DefaultStringUtilsAdapter implements StringUtilsAdapter {
-    PASCAL_CASE_REGEX = /^([A-Z]{1,}[a-z]{0,})+([A-Z]{1,}[a-z]{0,})*$/;
-    CAMEL_CASE_REGEX = /^[a-z]+([A-Z][a-z]*)*$/;
-    LOWER_SNAKE_CASE_REGEX = /^(_)?[a-z]+(_[a-z]+)*$/g;
-    UPPER_SNAKE_CASE_REGEX = /^(_)?[A-Z]+(_[A-Z]+)*$/g;
-    KEBAB_CASE_REGEX = /^[a-z]+(-[a-z]+)*$/g;
+    UPPER_CASE_REGEX = /^[A-Z0-9]+$/;
+    LOWE_CASE_REGEX = /^[a-z0-9]+$/;
+    CAPITALIZE_CASE_REGEX = /^[A-Z][a-z]*$/;
+    PASCAL_CASE_REGEX =
+        /^([A-Z0-9]{1,}[a-z0-9]{0,})+([A-Z0-9]{1,}[a-z0-9]{0,})*$/;
+    CAMEL_CASE_REGEX = /^[a-z0-9]+([A-Z0-9][a-z0-9]*)*$/;
+    LOWER_SNAKE_CASE_REGEX = /^(_)?[a-z0-9]+(_[a-z0-9]{0,})*$/g;
+    UPPER_SNAKE_CASE_REGEX = /^(_)?[A-Z0-9]+(_[A-Z0-9]{0,})*$/g;
+    KEBAB_CASE_REGEX = /^[a-z0-9]+(-[a-z0-9]{0,})*$/g;
     MONEY_CASE_REGEX = /^\$?\d{1,3}(,\d{3})*(?:\.\d+)?$/g;
     NUMBER_CASE_REGEX = /^-?\d+(\.\d+)?$/g;
     SEPARATED_BY_SPACES_CASE_REGEX = /^(?!.*_)([A-Za-z0-9\- ]+)$/g;
@@ -81,8 +85,8 @@ export class DefaultStringUtilsAdapter implements StringUtilsAdapter {
         const { arrayString } = this.textCaseToArrayString(word);
         return this.arrayStringToKebabCase(arrayString);
     }
-    private moneyToArrayCase(word: string): string[] {
-        return [word];
+    private simpleStringToArrayCase(word: string): string[] {
+        return [word.toLowerCase()];
     }
     private undefinedCaseToArrayCase(word: string): string[] {
         return word
@@ -122,12 +126,12 @@ export class DefaultStringUtilsAdapter implements StringUtilsAdapter {
             [this.KEBAB_CASE_REGEX, StringCases.KEBAB_CASE],
             [this.CAMEL_CASE_REGEX, StringCases.CAMEL_CASE],
             [this.PASCAL_CASE_REGEX, StringCases.PASCAL_CASE],
+            [this.MONEY_CASE_REGEX, StringCases.MONEY_CASE],
+            [this.NUMBER_CASE_REGEX, StringCases.NUMBER_CASE],
             [
                 this.SEPARATED_BY_SPACES_CASE_REGEX,
                 StringCases.SEPARATED_BY_SPACES_CASE
-            ],
-            [this.MONEY_CASE_REGEX, StringCases.MONEY_CASE],
-            [this.NUMBER_CASE_REGEX, StringCases.NUMBER_CASE]
+            ]
         ];
 
         for (const [regex, stringCase] of caseRegexMap) {
@@ -159,13 +163,16 @@ export class DefaultStringUtilsAdapter implements StringUtilsAdapter {
             };
         }
         const mapFunctions = {
+            [StringCases.CAPITALIZE_CASE]: this.simpleStringToArrayCase,
+            [StringCases.UPPER_CASE]: this.simpleStringToArrayCase,
+            [StringCases.LOWER_CASE]: this.simpleStringToArrayCase,
             [StringCases.LOWER_SNAKE_CASE]: this.snakeCaseToArrayString,
             [StringCases.UPPER_SNAKE_CASE]: this.snakeCaseToArrayString,
             [StringCases.CAMEL_CASE]: this.camelCaseToArrayString,
             [StringCases.KEBAB_CASE]: this.kebabCaseToArrayString,
             [StringCases.PASCAL_CASE]: this.pascalCaseToArrayString,
-            [StringCases.MONEY_CASE]: this.moneyToArrayCase,
-            [StringCases.NUMBER_CASE]: this.moneyToArrayCase
+            [StringCases.MONEY_CASE]: this.simpleStringToArrayCase,
+            [StringCases.NUMBER_CASE]: this.simpleStringToArrayCase
         };
         const handler: (w: string) => string[] =
             mapFunctions[stringCase] || this.undefinedCaseToArrayCase;
