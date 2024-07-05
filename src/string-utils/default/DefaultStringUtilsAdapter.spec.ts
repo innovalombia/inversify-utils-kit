@@ -31,14 +31,50 @@ describe('DefaultStringUtilsAdapter Test Suite', () => {
         });
     });
     describe('test for textCaseToAllCases', () => {
-        it('should return success result', async () => {
+        it('should return success result for kebab case', async () => {
             const result = adapter.textCaseToAllCases('loan-simple-event');
             expect(result).toEqual({
                 camelCase: 'loanSimpleEvent',
                 kebabCase: 'loan-simple-event',
                 lowerSnakeCase: 'loan_simple_event',
                 upperSnakeCase: 'LOAN_SIMPLE_EVENT',
-                pascalCase: 'LoanSimpleEvent'
+                pascalCase: 'LoanSimpleEvent',
+                capitalizeCase: 'Loan simple event',
+                lowerCase: 'loan simple event',
+                fullCapitalizeCase: 'Loan Simple Event',
+                upperCase: 'LOAN SIMPLE EVENT',
+                stringCase: StringCases.KEBAB_CASE
+            });
+        });
+        it('should return success result', async () => {
+            const result = adapter.textCaseToAllCases('loan_simple_event');
+            expect(result).toEqual({
+                camelCase: 'loanSimpleEvent',
+                kebabCase: 'loan-simple-event',
+                lowerSnakeCase: 'loan_simple_event',
+                upperSnakeCase: 'LOAN_SIMPLE_EVENT',
+                pascalCase: 'LoanSimpleEvent',
+                capitalizeCase: 'Loan simple event',
+                lowerCase: 'loan simple event',
+                fullCapitalizeCase: 'Loan Simple Event',
+                upperCase: 'LOAN SIMPLE EVENT',
+                stringCase: StringCases.LOWER_SNAKE_CASE
+            });
+        });
+
+        it('should return success result', async () => {
+            const result = adapter.textCaseToAllCases('StringPascalCase');
+            expect(result).toEqual({
+                camelCase: 'stringPascalCase',
+                kebabCase: 'string-pascal-case',
+                lowerSnakeCase: 'string_pascal_case',
+                upperSnakeCase: 'STRING_PASCAL_CASE',
+                pascalCase: 'StringPascalCase',
+                capitalizeCase: 'String pascal case',
+                lowerCase: 'string pascal case',
+                fullCapitalizeCase: 'String Pascal Case',
+                upperCase: 'STRING PASCAL CASE',
+                stringCase: StringCases.PASCAL_CASE
             });
         });
     });
@@ -78,49 +114,55 @@ describe('DefaultStringUtilsAdapter Test Suite', () => {
         });
         it('should no identify case', async () => {
             expect(() => {
-                adapter.checkStringCase('UPPER_CASE_EXAMPLE_a');
+                adapter.checkStringCase('upper case example a');
             }).toThrowError(CannotBeDeterminedStringCase);
         });
     });
 
     describe('test for textCaseToArrayString', () => {
         it('should transform snake_cases to array', async () => {
-            const result = adapter.textCaseToArrayString('this_is_example');
-            expect(result.join(' ')).toBe('this is example');
+            const { arrayString } =
+                adapter.textCaseToArrayString('this_is_example');
+            expect(arrayString.join(' ')).toBe('this is example');
         });
         it('should identify PascalCase', async () => {
-            const result = adapter.textCaseToArrayString(
+            const { arrayString } = adapter.textCaseToArrayString(
                 'SecondExampleWithPascalCase'
             );
-            expect(result.join(' ')).toBe('second example with pascal case');
+            expect(arrayString.join(' ')).toBe(
+                'second example with pascal case'
+            );
         });
         it('should identify camelCase', async () => {
-            const result = adapter.textCaseToArrayString('camelCaseExample');
-            expect(result.join(' ')).toBe('camel case example');
+            const { arrayString } =
+                adapter.textCaseToArrayString('camelCaseExample');
+            expect(arrayString.join(' ')).toBe('camel case example');
         });
         it('should identify UPPER_CASE', async () => {
-            const result = adapter.textCaseToArrayString('UPPER_CASE_EXAMPLE');
-            expect(result.join(' ')).toBe('upper case example');
+            const { arrayString } =
+                adapter.textCaseToArrayString('UPPER_CASE_EXAMPLE');
+            expect(arrayString.join(' ')).toBe('upper case example');
         });
         it('should identify kebab-case', async () => {
-            const result = adapter.textCaseToArrayString(
+            const { arrayString } = adapter.textCaseToArrayString(
                 'default-string-case-and-case'
             );
-            expect(result.join(' ')).toBe('default string case and case');
+            expect(arrayString.join(' ')).toBe('default string case and case');
         });
         it('should identify money case', async () => {
-            const result = adapter.textCaseToArrayString('$1,341,000.00');
-            expect(result.join(' ')).toBe('$1,341,000.00');
+            const { arrayString } =
+                adapter.textCaseToArrayString('$1,341,000.00');
+            expect(arrayString.join(' ')).toBe('$1,341,000.00');
         });
         it('should identify number case', async () => {
-            const result = adapter.textCaseToArrayString('-341000.00');
-            expect(result.join(' ')).toBe('-341000.00');
+            const { arrayString } = adapter.textCaseToArrayString('-341000.00');
+            expect(arrayString.join(' ')).toBe('-341000.00');
         });
         it('should no identify case', async () => {
-            const result = adapter.textCaseToArrayString(
-                'UPPER_CASE_EXAMPLE_a'
+            const { arrayString } = adapter.textCaseToArrayString(
+                'upper case example a'
             );
-            expect(result.join(' ')).toBe('UPPER_CASE_EXAMPLE_a');
+            expect(arrayString.join(' ')).toBe('upper case example a');
         });
     });
 });

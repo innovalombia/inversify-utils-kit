@@ -5,7 +5,8 @@ export enum StringCases {
     LOWER_SNAKE_CASE = 'LOWER_SNAKE_CASE',
     KEBAB_CASE = 'KEBAB_CASE',
     MONEY_CASE = 'MONEY_CASE',
-    NUMBER_CASE = 'NUMBER_CASE'
+    NUMBER_CASE = 'NUMBER_CASE',
+    SEPARATED_BY_SPACES_CASE = 'SEPARATED_BY_SPACES_CASE'
 }
 
 export class StringUtilsAdapterError extends Error {
@@ -32,19 +33,29 @@ export class CannotBeDeterminedStringCase extends StringUtilsAdapterError {
     }
 }
 
+export interface TextToArrayStringResult {
+    stringCase: StringCases | null;
+    arrayString: string[];
+}
+
 export interface AllCasesResult {
     camelCase: string;
     kebabCase: string;
     lowerSnakeCase: string;
     upperSnakeCase: string;
     pascalCase: string;
+    lowerCase: string;
+    upperCase: string;
+    capitalizeCase: string;
+    fullCapitalizeCase: string;
+    stringCase: StringCases | null;
 }
 
 export interface StringUtilsAdapter {
     toCapitalize(payload: string): string;
     toSimpleCapitalize(word: string): string;
     checkStringCase(word: string): StringCases | null;
-    textCaseToArrayString(word: string): string[];
+    textCaseToArrayString(word: string): TextToArrayStringResult;
     camelCaseToArrayString(word: string): string[];
     snakeCaseToArrayString(word: string): string[];
     pascalCaseToArrayString(word: string): string[];

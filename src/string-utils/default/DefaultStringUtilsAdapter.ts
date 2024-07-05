@@ -4,7 +4,8 @@ import {
     AllCasesResult,
     CannotBeDeterminedStringCase,
     StringCases,
-    StringUtilsAdapter
+    StringUtilsAdapter,
+    TextToArrayStringResult
 } from '../StringUtilsAdapter';
 
 @injectable()
@@ -16,6 +17,7 @@ export class DefaultStringUtilsAdapter implements StringUtilsAdapter {
     KEBAB_CASE_REGEX = /^[a-z]+(-[a-z]+)*$/g;
     MONEY_CASE_REGEX = /^\$?\d{1,3}(,\d{3})*(?:\.\d+)?$/g;
     NUMBER_CASE_REGEX = /^-?\d+(\.\d+)?$/g;
+    SEPARATED_BY_SPACES_CASE_REGEX = /^(?!.*_)([A-Za-z0-9\- ]+)$/g;
 
     constructor(
         characterForDecimals: string = '.',
@@ -33,10 +35,6 @@ export class DefaultStringUtilsAdapter implements StringUtilsAdapter {
     }
     toSimpleCapitalize(word: string): string {
         return word.charAt(0).toUpperCase() + word.slice(1);
-    }
-
-    private wordToWord(word: string): string[] {
-        return [word];
     }
 
     private regexToArrayString(input: string, regex: RegExp): string[] {
@@ -67,21 +65,30 @@ export class DefaultStringUtilsAdapter implements StringUtilsAdapter {
         return arrayString.join('-');
     }
     textCaseToCamelCase(word: string): string {
-        const arrayString = this.textCaseToArrayString(word);
+        const { arrayString } = this.textCaseToArrayString(word);
         return this.arrayStringToCamelCase(arrayString);
     }
     textCaseToSnakeCase(word: string, formatUpper = false): string {
-        const arrayString = this.textCaseToArrayString(word);
+        const { arrayString } = this.textCaseToArrayString(word);
         const newWord = this.arrayStringToSnakeCase(arrayString);
         return formatUpper ? newWord.toUpperCase() : newWord;
     }
     textCaseToPascalCase(word: string): string {
-        const arrayString = this.textCaseToArrayString(word);
+        const { arrayString } = this.textCaseToArrayString(word);
         return this.arrayStringToPascalCase(arrayString);
     }
     textCaseToKebabCase(word: string): string {
-        const arrayString = this.textCaseToArrayString(word);
+        const { arrayString } = this.textCaseToArrayString(word);
         return this.arrayStringToKebabCase(arrayString);
+    }
+    private moneyToArrayCase(word: string): string[] {
+        return [word];
+    }
+    private undefinedCaseToArrayCase(word: string): string[] {
+        return word
+            .toLowerCase()
+            .split(/[_\s-]+/)
+            .map((word) => word.toLowerCase());
     }
     camelCaseToArrayString(word: string): string[] {
         return word
@@ -115,6 +122,10 @@ export class DefaultStringUtilsAdapter implements StringUtilsAdapter {
             [this.KEBAB_CASE_REGEX, StringCases.KEBAB_CASE],
             [this.CAMEL_CASE_REGEX, StringCases.CAMEL_CASE],
             [this.PASCAL_CASE_REGEX, StringCases.PASCAL_CASE],
+            [
+                this.SEPARATED_BY_SPACES_CASE_REGEX,
+                StringCases.SEPARATED_BY_SPACES_CASE
+            ],
             [this.MONEY_CASE_REGEX, StringCases.MONEY_CASE],
             [this.NUMBER_CASE_REGEX, StringCases.NUMBER_CASE]
         ];
@@ -135,32 +146,45 @@ export class DefaultStringUtilsAdapter implements StringUtilsAdapter {
     }
     _checkLanguageStringCase(word: string): StringCases | null {
         const stringCase = this._checkStringCase(word);
-        if (!stringCase || stringCase in [StringCases.MONEY_CASE]) return null;
+        if (!stringCase || stringCase in [StringCases.SEPARATED_BY_SPACES_CASE])
+            return null;
         return stringCase;
     }
-    textCaseToArrayString(word: string): string[] {
+    textCaseToArrayString(word: string): TextToArrayStringResult {
         const stringCase = this._checkLanguageStringCase(word);
         if (!stringCase) {
-            return this.wordToWord(word);
+            return {
+                arrayString: this.undefinedCaseToArrayCase(word),
+                stringCase
+            };
         }
         const mapFunctions = {
             [StringCases.LOWER_SNAKE_CASE]: this.snakeCaseToArrayString,
             [StringCases.UPPER_SNAKE_CASE]: this.snakeCaseToArrayString,
             [StringCases.CAMEL_CASE]: this.camelCaseToArrayString,
             [StringCases.KEBAB_CASE]: this.kebabCaseToArrayString,
-            [StringCases.PASCAL_CASE]: this.pascalCaseToArrayString
+            [StringCases.PASCAL_CASE]: this.pascalCaseToArrayString,
+            [StringCases.MONEY_CASE]: this.moneyToArrayCase,
+            [StringCases.NUMBER_CASE]: this.moneyToArrayCase
         };
         const handler: (w: string) => string[] =
-            mapFunctions[stringCase] || this.wordToWord;
-        return handler(word);
+            mapFunctions[stringCase] || this.undefinedCaseToArrayCase;
+        return {
+            arrayString: handler(word),
+            stringCase
+        };
     }
     textCaseToAllCases(word: string): AllCasesResult {
-        const arrayString = this.textCaseToArrayString(word);
+        const { arrayString, stringCase } = this.textCaseToArrayString(word);
         let camelCase: string = '';
         let kebabCase: string = '';
         let lowerSnakeCase: string = '';
         let upperSnakeCase: string = '';
         let pascalCase: string = '';
+        let lowerCase: string = '';
+        let upperCase: string = '';
+        let capitalizeCase: string = '';
+        let fullCapitalizeCase: string = '';
 
         arrayString.forEach((value, index) => {
             const valueUpper = value.toUpperCase();
@@ -171,6 +195,10 @@ export class DefaultStringUtilsAdapter implements StringUtilsAdapter {
                 lowerSnakeCase = value;
                 upperSnakeCase = valueUpper;
                 pascalCase = valueCapitalize;
+                lowerCase = value;
+                upperCase = valueUpper;
+                capitalizeCase = valueCapitalize;
+                fullCapitalizeCase = valueCapitalize;
                 return;
             }
             camelCase = `${camelCase}${valueCapitalize}`;
@@ -178,6 +206,10 @@ export class DefaultStringUtilsAdapter implements StringUtilsAdapter {
             lowerSnakeCase = `${lowerSnakeCase}_${value}`;
             upperSnakeCase = `${upperSnakeCase}_${valueUpper}`;
             pascalCase = `${pascalCase}${valueCapitalize}`;
+            lowerCase = `${lowerCase} ${value}`;
+            upperCase = `${upperCase} ${valueUpper}`;
+            capitalizeCase = `${capitalizeCase} ${value}`;
+            fullCapitalizeCase = `${fullCapitalizeCase} ${valueCapitalize}`;
         });
 
         return {
@@ -185,7 +217,12 @@ export class DefaultStringUtilsAdapter implements StringUtilsAdapter {
             kebabCase,
             lowerSnakeCase,
             pascalCase,
-            upperSnakeCase
+            upperSnakeCase,
+            stringCase,
+            lowerCase,
+            upperCase,
+            capitalizeCase,
+            fullCapitalizeCase
         };
     }
 }
