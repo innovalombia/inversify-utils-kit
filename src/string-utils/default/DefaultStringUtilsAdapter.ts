@@ -11,7 +11,7 @@ import {
 @injectable()
 export class DefaultStringUtilsAdapter implements StringUtilsAdapter {
     UPPER_CASE_REGEX = /^[A-Z0-9]+$/;
-    LOWE_CASE_REGEX = /^[a-z0-9]+$/;
+    LOWER_CASE_REGEX = /^[a-z0-9]+$/;
     CAPITALIZE_CASE_REGEX = /^[A-Z][a-z]*$/;
     PASCAL_CASE_REGEX =
         /^([A-Z0-9]{1,}[a-z0-9]{0,})+([A-Z0-9]{1,}[a-z0-9]{0,})*$/;
@@ -121,6 +121,9 @@ export class DefaultStringUtilsAdapter implements StringUtilsAdapter {
         }
 
         const caseRegexMap: [RegExp, StringCases][] = [
+            [this.CAPITALIZE_CASE_REGEX, StringCases.CAPITALIZE_CASE],
+            [this.LOWER_CASE_REGEX, StringCases.LOWER_CASE],
+            [this.UPPER_CASE_REGEX, StringCases.UPPER_CASE],
             [this.LOWER_SNAKE_CASE_REGEX, StringCases.LOWER_SNAKE_CASE],
             [this.UPPER_SNAKE_CASE_REGEX, StringCases.UPPER_SNAKE_CASE],
             [this.KEBAB_CASE_REGEX, StringCases.KEBAB_CASE],
