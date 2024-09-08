@@ -28,9 +28,9 @@ export class LuxonDatesAdapter implements DatesAdapter {
     ) {}
 
     fromUnix(input: string): { posix: number; type: string } {
-        if (!/^\d{10}(?:\d{3})?(?:\d{6})?(?:\d{9})?$/.test(input)) {
+        if (!/^\d{9}(?:\d{1})?(?:\d{4})?(?:\d{7})?(?:\d{10})?$/.test(input)) {
             throw new Error(
-                'Invalid posix, posix should be have a number with 10, 13, 16 or 19 digits'
+                'Invalid posix, posix should be have a number with 9, 10, 13, 16 or 19 digits'
             );
         }
         let base = Number(input);
