@@ -24,7 +24,11 @@
   },
   "keywords": [
     "typescript",
-    "library"
+    "library",
+    "utilities",
+    "inversify",
+    "inversion of control container",
+    "injectable dependencies"
   ],
   "author": "",
   "license": "ISC",
@@ -33,7 +37,7 @@
   },
   "homepage": "https://github.com/innovalombia/inversify-utils-kit#readme",
   "engines": {
-    "node": ">=18.18.0 <=20.9.0"
+    "node": ">=18.18.0 <=22.11.0"
   },
   "dependencies": {
     "inversify": "^6.0.2",
@@ -41,9 +45,9 @@
   },
   "peerDependencies": {
     "decimal.js": "^10.4.3",
+    "luxon": "^3.0.1",
     "numeral": "^2.0.6",
-    "yaml": "^2.3.3",
-    "luxon": "^3.0.1"
+    "yaml": "^2.3.3"
   },
   "devDependencies": {
     "@commitlint/cli": "^17.2.0",
@@ -54,20 +58,19 @@
     "@types/luxon": "^3.3.3",
     "@types/node": "^20.8.9",
     "@types/numeral": "^2.0.2",
-    "@typescript-eslint/eslint-plugin": "^7.11.0",
-    "@typescript-eslint/parser": "^7.11.0",
-    "eslint": "^8.44.0",
+    "@typescript-eslint/eslint-plugin": "^8.27.0",
+    "@typescript-eslint/parser": "^8.27.0",
+    "eslint": "^9.22.0",
     "eslint-config-prettier": "^8.3.0",
     "eslint-plugin-import": "^2.25.4",
     "eslint-plugin-jasmine": "^4.1.2",
     "eslint-plugin-prettier": "^5.0.0",
-    "eslint-plugin-sort-destructure-keys": "^1.5.0",
-    "husky": "^8.0.2",
+    "eslint-plugin-sort-destructure-keys": "^2.0.0",
+    "husky": "^8.0.3",
     "jasmine": "^3.6.4",
     "nyc": "^15.1.0",
     "prettier": "^3.0.0",
-    "reflect-metadata": "^0.1.13",
-    "rimraf": "^3.0.2",
+    "rimraf": "^6.0.1",
     "ts-mocks": "^3.0.1",
     "ts-node": "^10.0.0",
     "tsc-alias": "^1.8.2",
