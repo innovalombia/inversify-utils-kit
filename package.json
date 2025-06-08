@@ -37,7 +37,7 @@
   },
   "homepage": "https://github.com/innovalombia/inversify-utils-kit#readme",
   "engines": {
-    "node": ">=18.18.0 <=22.11.0"
+    "node": ">=18.18.0 <=22.16.0"
   },
   "dependencies": {
     "inversify": "^6.0.2",
