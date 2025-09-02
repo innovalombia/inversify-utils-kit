@@ -2,7 +2,6 @@ import js from '@eslint/js';
 import ts from '@typescript-eslint/eslint-plugin';
 import tsParser from '@typescript-eslint/parser';
 import prettier from 'eslint-plugin-prettier';
-import jasmine from 'eslint-plugin-jasmine';
 import sortKeys from 'eslint-plugin-sort-destructure-keys';
 
 export default [
@@ -23,16 +22,21 @@ export default [
         plugins: {
             '@typescript-eslint': ts,
             prettier,
-            jasmine,
             'sort-destructure-keys': sortKeys
         },
         rules: {
             indent: 'off',
             '@typescript-eslint/no-explicit-any': 'off',
             '@typescript-eslint/no-var-requires': 'off',
-            '@typescript-eslint/no-unused-vars': 'off',
             'sort-destructure-keys/sort-destructure-keys': 'warn',
             'no-unused-vars': 'off',
+            '@typescript-eslint/no-unused-vars': [
+                'warn',
+                {
+                    vars: 'local',
+                    args: 'none'
+                }
+            ],
             'prettier/prettier': [
                 'warn',
                 {
@@ -42,12 +46,7 @@ export default [
             'no-undef': 'off'
         }
     },
-    {
-        files: ['**/migrations/*.js'],
-        rules: {
-            '@typescript-eslint/no-unused-vars': 'off'
-        }
-    },
+
     {
         ignores: [
             'package.json',

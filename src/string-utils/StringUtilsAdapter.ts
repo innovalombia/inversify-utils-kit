@@ -70,4 +70,6 @@ export interface StringUtilsAdapter {
     textCaseToAllCases(word: string): AllCasesResult;
 }
 
-export const STRING_UTILS_ADAPTER_TYPE = Symbol('STRING_UTILS_ADAPTER_TYPE');
+export const STRING_UTILS_ADAPTER_TYPE = Symbol.for(
+    'STRING_UTILS_ADAPTER_TYPE'
+);
