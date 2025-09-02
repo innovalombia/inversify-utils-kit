@@ -1,6 +1,6 @@
 import 'reflect-metadata';
 
-import { injectable } from 'inversify';
+import { injectable, unmanaged } from 'inversify';
 
 import {
     AllCasesResult,
@@ -26,8 +26,8 @@ export class DefaultStringUtilsAdapter implements StringUtilsAdapter {
     SEPARATED_BY_SPACES_CASE_REGEX = /^(?!.*_)([A-Za-z0-9\- ]+)$/g;
 
     constructor(
-        characterForDecimals: string = '.',
-        characterForMills: string = '\\,'
+        @unmanaged() characterForDecimals: string = '.',
+        @unmanaged() characterForMills: string = '\\,'
     ) {
         this.MONEY_CASE_REGEX = new RegExp(
             `^\\$?\\d{1,3}(${characterForMills}\\d{3})*(?:${characterForDecimals}\\d+)?$`
