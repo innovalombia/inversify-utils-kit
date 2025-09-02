@@ -47,10 +47,10 @@ export interface DatesAdapter {
     ): number;
 }
 
-export const DATES_ADAPTER_TYPE = Symbol.for('DATES_ADAPTER_TYPE');
-export const LANG_DATES_ADAPTER_CONST_TYPE = Symbol.for(
+export const DATES_ADAPTER_TYPE = Symbol('DATES_ADAPTER_TYPE');
+export const LANG_DATES_ADAPTER_CONST_TYPE = Symbol(
     'LANG_DATES_ADAPTER_CONST_TYPE'
 );
-export const TIMEZONE_DATES_ADAPTER_CONST_TYPE = Symbol.for(
+export const TIMEZONE_DATES_ADAPTER_CONST_TYPE = Symbol(
     'TIMEZONE_DATES_ADAPTER_CONST_TYPE'
 );

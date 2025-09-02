@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/explicit-module-boundary-types */
 import 'reflect-metadata';
 
 import { inject, injectable, optional } from 'inversify';
