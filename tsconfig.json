@@ -1,14 +1,12 @@
 {
     "compilerOptions": {
         "esModuleInterop": true,
-        "ignoreDeprecations": "6.0",
         "declaration": true,
         "target": "es2022",
         "module": "node16",
         "sourceMap": false,
         "moduleResolution": "node16",
         "rootDir": "./src",
-        "baseUrl": "./src",
         "outDir": "./dist",
         "resolveJsonModule": true,
         "emitDecoratorMetadata": true,
@@ -17,11 +15,11 @@
         "typeRoots": ["@types", "./node_modules/@types"],
         "types": ["jasmine", "node"],
         "paths": {
-            "@common/*": ["common/*"],
-            "@middlewares/*": ["middlewares/*"],
-            "@contexts/*": ["contexts/*"],
-            "@database/*": ["database/*"],
-            "@/*": ["*"]
+            "@common/*": ["./src/common/*"],
+            "@middlewares/*": ["./src/middlewares/*"],
+            "@contexts/*": ["./src/contexts/*"],
+            "@database/*": ["./src/database/*"],
+            "@/*": ["./src/*"]
         }
     },
     "include": ["src/**/*"],
