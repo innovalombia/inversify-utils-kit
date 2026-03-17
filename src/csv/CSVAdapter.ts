@@ -58,7 +58,7 @@ export interface CSVAdapter {
     parse<T>(
         config: CSVConfig,
         input: string,
-        schema: Record<keyof T, CSVColumnType>
+        schema?: Partial<Record<keyof T, CSVColumnType>>
     ): CSVParseResult<T>;
     /**
      * Searches all rows for entries where `key` equals `value`.

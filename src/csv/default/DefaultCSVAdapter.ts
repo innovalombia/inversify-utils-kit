@@ -93,6 +93,52 @@ export class DefaultCSVAdapter implements CSVAdapter {
             : new RegExp(`([^${delimiter}]+)`, 'g');
     }
 
+    private validateField(
+        header: string,
+        value: unknown,
+        expectedType: CSVColumnType,
+        rowNumber: number
+    ): ValidationError | null {
+        switch (expectedType) {
+            case 'number':
+                if (typeof value !== 'number' || !isFinite(value as number))
+                    return {
+                        row: rowNumber,
+                        column: header,
+                        message: `Expected number, got "${value}"`
+                    };
+                break;
+            case 'boolean':
+                if (typeof value !== 'boolean')
+                    return {
+                        row: rowNumber,
+                        column: header,
+                        message: `Expected boolean, got "${value}"`
+                    };
+                break;
+            case 'date':
+                if (
+                    !(value instanceof Date) ||
+                    isNaN((value as Date).getTime())
+                )
+                    return {
+                        row: rowNumber,
+                        column: header,
+                        message: `Invalid date format: "${value}"`
+                    };
+                break;
+            case 'string':
+                if (typeof value !== 'string')
+                    return {
+                        row: rowNumber,
+                        column: header,
+                        message: `Expected string, got "${value}"`
+                    };
+                break;
+        }
+        return null;
+    }
+
     private splitLine(line: string, regex: RegExp): string[] {
         regex.lastIndex = 0;
         const values: string[] = [];
@@ -110,7 +156,7 @@ export class DefaultCSVAdapter implements CSVAdapter {
     parse<T>(
         config: CSVConfig,
         input: string,
-        schema: Record<keyof T, CSVColumnType>
+        schema?: Partial<Record<keyof T, CSVColumnType>>
     ): CSVParseResult<T> {
         const { delimiter, hasQuotes } = config;
         const lines = input.trim().split(/\r?\n/);
@@ -150,46 +196,38 @@ export class DefaultCSVAdapter implements CSVAdapter {
 
             headers.forEach((header, i) => {
                 const rawValue = values[i]?.trim() ?? '';
-                const targetType = schema[header as keyof T];
+                const targetType = schema?.[header as keyof T];
 
                 if (!targetType) {
                     rowObject[header] = rawValue;
                     return;
                 }
 
+                let castValue: unknown;
                 switch (targetType) {
-                    case 'number': {
-                        const num = Number(rawValue);
-                        if (isNaN(num)) {
-                            validationErrors.push({
-                                row: rowNumber,
-                                column: header,
-                                message: `Expected number, got "${rawValue}"`
-                            });
-                        }
-                        rowObject[header] = num;
+                    case 'number':
+                        castValue = Number(rawValue);
                         break;
-                    }
                     case 'boolean':
-                        rowObject[header] =
+                        castValue =
                             rawValue.toLowerCase() === 'true' ||
                             rawValue === '1';
                         break;
-                    case 'date': {
-                        const date = new Date(rawValue);
-                        if (isNaN(date.getTime())) {
-                            validationErrors.push({
-                                row: rowNumber,
-                                column: header,
-                                message: `Invalid date format: "${rawValue}"`
-                            });
-                        }
-                        rowObject[header] = date;
+                    case 'date':
+                        castValue = new Date(rawValue);
                         break;
-                    }
                     default:
-                        rowObject[header] = rawValue;
+                        castValue = rawValue;
                 }
+
+                const error = this.validateField(
+                    header,
+                    castValue,
+                    targetType,
+                    rowNumber
+                );
+                if (error) validationErrors.push(error);
+                rowObject[header] = castValue;
             });
 
             finalResults.push(rowObject as T);
@@ -263,34 +301,13 @@ export class DefaultCSVAdapter implements CSVAdapter {
                 ([header, value]) => {
                     const expectedType = inferredTypes[header];
                     if (!expectedType) return;
-
-                    let valid = true;
-                    switch (expectedType) {
-                        case 'number':
-                            valid =
-                                typeof value === 'number' &&
-                                isFinite(value as number);
-                            break;
-                        case 'boolean':
-                            valid = typeof value === 'boolean';
-                            break;
-                        case 'date':
-                            valid =
-                                value instanceof Date &&
-                                !isNaN((value as Date).getTime());
-                            break;
-                        case 'string':
-                            valid = typeof value === 'string';
-                            break;
-                    }
-
-                    if (!valid && !required) {
-                        errors.push({
-                            row: rowNumber,
-                            column: header,
-                            message: `Expected ${expectedType}, got ${value instanceof Date ? 'Date' : typeof value} "${value}"`
-                        });
-                    }
+                    const error = this.validateField(
+                        header,
+                        value,
+                        expectedType,
+                        rowNumber
+                    );
+                    if (error) errors.push(error);
                 }
             );
         }
