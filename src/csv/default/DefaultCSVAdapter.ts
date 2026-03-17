@@ -7,7 +7,8 @@ import {
     CSVIdentifyResult,
     CSVParseResult,
     CSVUpdateResult,
-    ValidationError
+    ValidationError,
+    WithRowNumber
 } from '../CSVAdapter';
 
 export class DefaultCSVAdapter implements CSVAdapter {
@@ -165,7 +166,7 @@ export class DefaultCSVAdapter implements CSVAdapter {
             .map((h) => h.replace(/"/g, '').trim());
 
         const dataRows = lines.slice(1);
-        const finalResults: T[] = [];
+        const finalResults: WithRowNumber<T>[] = [];
         const validationErrors: ValidationError[] = [];
         const regex = this.buildRegex(delimiter, hasQuotes);
 
@@ -230,7 +231,8 @@ export class DefaultCSVAdapter implements CSVAdapter {
                 rowObject[header] = castValue;
             });
 
-            finalResults.push(rowObject as T);
+            rowObject.__rowNumber = rowNumber;
+            finalResults.push(rowObject as WithRowNumber<T>);
         });
 
         return {
@@ -328,7 +330,14 @@ export class DefaultCSVAdapter implements CSVAdapter {
     export<T>(data: T[], delimiter: CSVDelimiter, useQuotes: boolean): string {
         if (!data.length) return '';
 
-        const headers = Object.keys(data[0] as object);
+        const headers = Object.keys(data[0] as object).reduce<string[]>(
+            (acc, key) => {
+                if (key !== '__rowNumber') acc.push(key);
+                return acc;
+            },
+            []
+        );
+
         const headerRow = headers.join(delimiter);
 
         const rows = data.map((row) => {

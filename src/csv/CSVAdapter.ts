@@ -25,13 +25,19 @@ export interface CSVIdentifyResult {
 }
 
 /**
+ * Wraps a parsed row with its source rowNumber (1 = header, 2 = first data row).
+ * The `__rowNumber` field is a meta field and will be excluded from exports.
+ */
+export type WithRowNumber<T> = T & { __rowNumber: number };
+
+/**
  * Result of parse — always includes errors (empty if none) and inferredTypes.
  * rowNumber convention: 1 = header row, 2 = first data row.
  */
 export interface CSVParseResult<T = any> {
     success: boolean;
     reasonForInvalidity?: string;
-    result: T[];
+    result: WithRowNumber<T>[];
     errors: ValidationError[];
     inferredTypes: Record<string, CSVColumnType>;
 }
