@@ -74,7 +74,8 @@ export interface CSVAdapter {
         rows: T[],
         rowNumber: number,
         data: Partial<T>,
-        inferredTypes: Record<string, CSVColumnType>
+        inferredTypes: Record<string, CSVColumnType>,
+        required?: boolean
     ): CSVUpdateResult<T>;
     export<T>(data: T[], delimiter: CSVDelimiter, useQuotes: boolean): string;
 }

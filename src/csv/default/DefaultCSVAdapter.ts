@@ -1,4 +1,5 @@
 import {
+    CSVAdapter,
     CSVColumnType,
     CSVConfig,
     CSVDelimiter,
@@ -9,7 +10,7 @@ import {
     ValidationError
 } from '../CSVAdapter';
 
-export class CSVAdapter {
+export class DefaultCSVAdapter implements CSVAdapter {
     /**
      * Identifies the delimiter by counting occurrences in the first few lines.
      * It also checks if the file is likely a binary file.
@@ -236,7 +237,8 @@ export class CSVAdapter {
         rows: T[],
         rowNumber: number,
         data: Partial<T>,
-        inferredTypes: Record<string, CSVColumnType>
+        inferredTypes: Record<string, CSVColumnType>,
+        required: boolean = false
     ): CSVUpdateResult<T> {
         const arrayIndex = rowNumber - 2;
         const errors: ValidationError[] = [];
@@ -256,40 +258,42 @@ export class CSVAdapter {
         }
 
         // Validate each field against its inferred type
-        (Object.entries(data as object) as [string, unknown][]).forEach(
-            ([header, value]) => {
-                const expectedType = inferredTypes[header];
-                if (!expectedType) return;
+        if (!required) {
+            (Object.entries(data as object) as [string, unknown][]).forEach(
+                ([header, value]) => {
+                    const expectedType = inferredTypes[header];
+                    if (!expectedType) return;
 
-                let valid = true;
-                switch (expectedType) {
-                    case 'number':
-                        valid =
-                            typeof value === 'number' &&
-                            isFinite(value as number);
-                        break;
-                    case 'boolean':
-                        valid = typeof value === 'boolean';
-                        break;
-                    case 'date':
-                        valid =
-                            value instanceof Date &&
-                            !isNaN((value as Date).getTime());
-                        break;
-                    case 'string':
-                        valid = typeof value === 'string';
-                        break;
-                }
+                    let valid = true;
+                    switch (expectedType) {
+                        case 'number':
+                            valid =
+                                typeof value === 'number' &&
+                                isFinite(value as number);
+                            break;
+                        case 'boolean':
+                            valid = typeof value === 'boolean';
+                            break;
+                        case 'date':
+                            valid =
+                                value instanceof Date &&
+                                !isNaN((value as Date).getTime());
+                            break;
+                        case 'string':
+                            valid = typeof value === 'string';
+                            break;
+                    }
 
-                if (!valid) {
-                    errors.push({
-                        row: rowNumber,
-                        column: header,
-                        message: `Expected ${expectedType}, got ${value instanceof Date ? 'Date' : typeof value} "${value}"`
-                    });
+                    if (!valid && !required) {
+                        errors.push({
+                            row: rowNumber,
+                            column: header,
+                            message: `Expected ${expectedType}, got ${value instanceof Date ? 'Date' : typeof value} "${value}"`
+                        });
+                    }
                 }
-            }
-        );
+            );
+        }
 
         if (errors.length > 0) {
             return { success: false, result: rows, errors };
