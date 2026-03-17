@@ -8,7 +8,8 @@ import { JSONOutputModel, JsonAdapter } from '../JsonAdapter';
 export class DefaultJsonAdapter implements JsonAdapter {
     parseStringToJson(input: string): JSONOutputModel {
         try {
-            const result = JSON.parse(input);
+            const sanitized = input.trim().replace(/,\s*([}\]])/g, '$1');
+            const result = JSON.parse(sanitized);
             return {
                 result,
                 reasonForInvalidity: ''

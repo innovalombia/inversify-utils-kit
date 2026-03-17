@@ -1,0 +1,325 @@
+import {
+    CSVColumnType,
+    CSVConfig,
+    CSVDelimiter,
+    CSVFindResult,
+    CSVIdentifyResult,
+    CSVParseResult,
+    CSVUpdateResult,
+    ValidationError
+} from '../CSVAdapter';
+
+export class CSVAdapter {
+    /**
+     * Identifies the delimiter by counting occurrences in the first few lines.
+     * It also checks if the file is likely a binary file.
+     */
+    identifyConfig(input: string): CSVIdentifyResult {
+        if (input.includes('\0')) {
+            return {
+                success: false,
+                reasonForInvalidity:
+                    'Binary file detected. Please upload a valid text CSV.',
+                result: null
+            };
+        }
+
+        const delimiters: CSVDelimiter[] = [',', ';', '\t', '|'];
+        const lines = input.split('\n').slice(0, 5);
+
+        let bestDelimiter: CSVDelimiter = ',';
+        let maxCount = -1;
+
+        delimiters.forEach((d) => {
+            const count = lines[0].split(d).length;
+            if (count > maxCount && count > 1) {
+                maxCount = count;
+                bestDelimiter = d;
+            }
+        });
+
+        return {
+            success: true,
+            result: {
+                delimiter: bestDelimiter,
+                hasQuotes: input.includes('"'),
+                header: true
+            }
+        };
+    }
+
+    private inferValueType(value: string): CSVColumnType {
+        if (!value) return 'string';
+
+        // Leading zero: "01889381" must be treated as string
+        if (/^0\d+/.test(value)) return 'string';
+
+        // Boolean: exact matches only
+        if (['true', 'false', '1', '0'].includes(value.toLowerCase()))
+            return 'boolean';
+
+        // Number
+        const num = Number(value);
+        if (!isNaN(num) && value.trim() !== '') return 'number';
+
+        // Date
+        const date = new Date(value);
+        if (!isNaN(date.getTime())) return 'date';
+
+        return 'string';
+    }
+
+    private mergeColumnType(
+        current: CSVColumnType,
+        next: CSVColumnType
+    ): CSVColumnType {
+        // Hierarchy: string(4) > number(3) > date(2) > boolean(1)
+        const rank: Record<CSVColumnType, number> = {
+            boolean: 1,
+            date: 2,
+            number: 3,
+            string: 4
+        };
+        return rank[next] > rank[current] ? next : current;
+    }
+
+    private buildRegex(delimiter: string, hasQuotes: boolean): RegExp {
+        return hasQuotes
+            ? new RegExp(
+                  `(?:^|${delimiter})(?:"([^"]*(?:""[^"]*)*)"|([^${delimiter}]*))`,
+                  'g'
+              )
+            : new RegExp(`([^${delimiter}]+)`, 'g');
+    }
+
+    private splitLine(line: string, regex: RegExp): string[] {
+        regex.lastIndex = 0;
+        const values: string[] = [];
+        let m;
+        while ((m = regex.exec(line)) !== null) {
+            values.push(m[1] ?? m[2] ?? '');
+        }
+        return values;
+    }
+
+    /**
+     * Parses the CSV string and converts it into a typed array of objects.
+     * rowNumber convention: 1 = header row, 2 = first data row.
+     */
+    parse<T>(
+        config: CSVConfig,
+        input: string,
+        schema: Record<keyof T, CSVColumnType>
+    ): CSVParseResult<T> {
+        const { delimiter, hasQuotes } = config;
+        const lines = input.trim().split(/\r?\n/);
+        const headers = lines[0]
+            .split(delimiter)
+            .map((h) => h.replace(/"/g, '').trim());
+
+        const dataRows = lines.slice(1);
+        const finalResults: T[] = [];
+        const validationErrors: ValidationError[] = [];
+        const regex = this.buildRegex(delimiter, hasQuotes);
+
+        // --- Infer column types from the first 10 data rows ---
+        const inferredTypes: Record<string, CSVColumnType> = {};
+
+        dataRows.slice(0, 10).forEach((line) => {
+            const values = this.splitLine(line, regex);
+            headers.forEach((header, i) => {
+                const raw = values[i]?.trim() ?? '';
+                if (!raw) return;
+                const detected = this.inferValueType(raw);
+                inferredTypes[header] = inferredTypes[header]
+                    ? this.mergeColumnType(inferredTypes[header], detected)
+                    : detected;
+            });
+        });
+
+        headers.forEach((h) => {
+            if (!inferredTypes[h]) inferredTypes[h] = 'string';
+        });
+
+        // --- Parse all rows ---
+        dataRows.forEach((line, index) => {
+            const values = this.splitLine(line, regex);
+            const rowObject: any = {};
+            const rowNumber = index + 2; // 1 = header, 2 = first data row
+
+            headers.forEach((header, i) => {
+                const rawValue = values[i]?.trim() ?? '';
+                const targetType = schema[header as keyof T];
+
+                if (!targetType) {
+                    rowObject[header] = rawValue;
+                    return;
+                }
+
+                switch (targetType) {
+                    case 'number': {
+                        const num = Number(rawValue);
+                        if (isNaN(num)) {
+                            validationErrors.push({
+                                row: rowNumber,
+                                column: header,
+                                message: `Expected number, got "${rawValue}"`
+                            });
+                        }
+                        rowObject[header] = num;
+                        break;
+                    }
+                    case 'boolean':
+                        rowObject[header] =
+                            rawValue.toLowerCase() === 'true' ||
+                            rawValue === '1';
+                        break;
+                    case 'date': {
+                        const date = new Date(rawValue);
+                        if (isNaN(date.getTime())) {
+                            validationErrors.push({
+                                row: rowNumber,
+                                column: header,
+                                message: `Invalid date format: "${rawValue}"`
+                            });
+                        }
+                        rowObject[header] = date;
+                        break;
+                    }
+                    default:
+                        rowObject[header] = rawValue;
+                }
+            });
+
+            finalResults.push(rowObject as T);
+        });
+
+        return {
+            success: validationErrors.length === 0,
+            result: finalResults,
+            errors: validationErrors,
+            inferredTypes,
+            reasonForInvalidity:
+                validationErrors.length > 0
+                    ? 'Data type mismatch found'
+                    : undefined
+        };
+    }
+
+    /**
+     * Searches all rows for entries where row[key] loosely matches value.
+     * Returns every match with its rowNumber (2-based) and matched header name.
+     */
+    find<T>(rows: T[], key: keyof T, value: unknown): CSVFindResult<T>[] {
+        const results: CSVFindResult<T>[] = [];
+        const needle = String(value);
+
+        rows.forEach((row, index) => {
+            if (String(row[key]) === needle) {
+                results.push({
+                    rowNumber: index + 2, // mirrors parse convention
+                    row,
+                    header: String(key)
+                });
+            }
+        });
+
+        return results;
+    }
+
+    /**
+     * Updates the row at `rowNumber` (2-based, same as parse/find convention).
+     * Each field in `data` is validated against `inferredTypes` before applying.
+     * Returns a new rows array — the original is never mutated.
+     */
+    updateRow<T>(
+        rows: T[],
+        rowNumber: number,
+        data: Partial<T>,
+        inferredTypes: Record<string, CSVColumnType>
+    ): CSVUpdateResult<T> {
+        const arrayIndex = rowNumber - 2;
+        const errors: ValidationError[] = [];
+
+        if (arrayIndex < 0 || arrayIndex >= rows.length) {
+            return {
+                success: false,
+                result: rows,
+                errors: [
+                    {
+                        row: rowNumber,
+                        column: '',
+                        message: `Row ${rowNumber} does not exist`
+                    }
+                ]
+            };
+        }
+
+        // Validate each field against its inferred type
+        (Object.entries(data as object) as [string, unknown][]).forEach(
+            ([header, value]) => {
+                const expectedType = inferredTypes[header];
+                if (!expectedType) return;
+
+                let valid = true;
+                switch (expectedType) {
+                    case 'number':
+                        valid =
+                            typeof value === 'number' &&
+                            isFinite(value as number);
+                        break;
+                    case 'boolean':
+                        valid = typeof value === 'boolean';
+                        break;
+                    case 'date':
+                        valid =
+                            value instanceof Date &&
+                            !isNaN((value as Date).getTime());
+                        break;
+                    case 'string':
+                        valid = typeof value === 'string';
+                        break;
+                }
+
+                if (!valid) {
+                    errors.push({
+                        row: rowNumber,
+                        column: header,
+                        message: `Expected ${expectedType}, got ${value instanceof Date ? 'Date' : typeof value} "${value}"`
+                    });
+                }
+            }
+        );
+
+        if (errors.length > 0) {
+            return { success: false, result: rows, errors };
+        }
+
+        const newRows = [...rows];
+        newRows[arrayIndex] = { ...rows[arrayIndex], ...data };
+
+        return { success: true, result: newRows, errors: [] };
+    }
+
+    /**
+     * Exports an array back to a CSV string with custom configuration.
+     */
+    export<T>(data: T[], delimiter: CSVDelimiter, useQuotes: boolean): string {
+        if (!data.length) return '';
+
+        const headers = Object.keys(data[0] as object);
+        const headerRow = headers.join(delimiter);
+
+        const rows = data.map((row) => {
+            return headers
+                .map((header) => {
+                    let value = String((row as any)[header] ?? '');
+                    value = value.replace(/\n/g, ' ').replace(/"/g, '""');
+                    return useQuotes ? `"${value}"` : value;
+                })
+                .join(delimiter);
+        });
+
+        return [headerRow, ...rows].join('\n');
+    }
+}
