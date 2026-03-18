@@ -94,33 +94,63 @@ export class DefaultCSVAdapter implements CSVAdapter {
             : new RegExp(`([^${delimiter}]+)`, 'g');
     }
 
+    private parseValue(value: unknown, expectedType: CSVColumnType): unknown {
+        if (typeof value !== 'string') return value;
+
+        const trimmed = value.trim();
+
+        switch (expectedType) {
+            case 'number': {
+                const num = Number(trimmed);
+                return isNaN(num) ? value : num;
+            }
+
+            case 'boolean': {
+                if (trimmed.toLowerCase() === 'true') return true;
+                if (trimmed.toLowerCase() === 'false') return false;
+                return value;
+            }
+
+            case 'date': {
+                const date = new Date(trimmed);
+                return isNaN(date.getTime()) ? value : date;
+            }
+
+            case 'string':
+                return value;
+        }
+    }
     private validateField(
         header: string,
         value: unknown,
         expectedType: CSVColumnType,
         rowNumber: number
     ): ValidationError | null {
+        const parsedValue = this.parseValue(value, expectedType);
+
         switch (expectedType) {
             case 'number':
-                if (typeof value !== 'number' || !isFinite(value as number))
+                if (typeof parsedValue !== 'number' || !isFinite(parsedValue))
                     return {
                         row: rowNumber,
                         column: header,
                         message: `Expected number, got "${value}"`
                     };
                 break;
+
             case 'boolean':
-                if (typeof value !== 'boolean')
+                if (typeof parsedValue !== 'boolean')
                     return {
                         row: rowNumber,
                         column: header,
                         message: `Expected boolean, got "${value}"`
                     };
                 break;
+
             case 'date':
                 if (
-                    !(value instanceof Date) ||
-                    isNaN((value as Date).getTime())
+                    !(parsedValue instanceof Date) ||
+                    isNaN(parsedValue.getTime())
                 )
                     return {
                         row: rowNumber,
@@ -128,8 +158,9 @@ export class DefaultCSVAdapter implements CSVAdapter {
                         message: `Invalid date format: "${value}"`
                     };
                 break;
+
             case 'string':
-                if (typeof value !== 'string')
+                if (typeof parsedValue !== 'string')
                     return {
                         row: rowNumber,
                         column: header,
@@ -137,6 +168,7 @@ export class DefaultCSVAdapter implements CSVAdapter {
                     };
                 break;
         }
+
         return null;
     }
 
@@ -176,7 +208,7 @@ export class DefaultCSVAdapter implements CSVAdapter {
         dataRows.slice(0, 10).forEach((line) => {
             const values = this.splitLine(line, regex);
             headers.forEach((header, i) => {
-                const raw = values[i]?.trim() ?? '';
+                const raw = values[i] ?? '';
                 if (!raw) return;
                 const detected = this.inferValueType(raw);
                 inferredTypes[header] = inferredTypes[header]
