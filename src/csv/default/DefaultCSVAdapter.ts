@@ -251,16 +251,28 @@ export class DefaultCSVAdapter implements CSVAdapter {
      * Searches all rows for entries where row[key] loosely matches value.
      * Returns every match with its rowNumber (2-based) and matched header name.
      */
-    find<T>(rows: T[], key: keyof T, value: unknown): CSVFindResult<T>[] {
+    find<T>(
+        rows: { [key: string]: any }[],
+        keyword: string
+    ): CSVFindResult<T>[] {
         const results: CSVFindResult<T>[] = [];
-        const needle = String(value);
+        const needle = String(keyword).toLowerCase();
 
-        rows.forEach((row, index) => {
-            if (String(row[key]) === needle) {
+        rows.forEach((row) => {
+            const matchedHeaders: string[] = [];
+
+            Object.entries(row).forEach(([header, value]) => {
+                if (header === '__rowNumber') return;
+                if (String(value).toLowerCase().includes(needle)) {
+                    matchedHeaders.push(header);
+                }
+            });
+
+            if (matchedHeaders.length > 0) {
                 results.push({
-                    rowNumber: index + 2, // mirrors parse convention
-                    row,
-                    header: String(key)
+                    rowNumber: row.__rowNumber,
+                    row: row as T,
+                    headers: matchedHeaders
                 });
             }
         });
@@ -327,7 +339,7 @@ export class DefaultCSVAdapter implements CSVAdapter {
     /**
      * Exports an array back to a CSV string with custom configuration.
      */
-    export<T>(data: T[], delimiter: CSVDelimiter, useQuotes: boolean): string {
+    export<T>(data: T[], config: CSVConfig): string {
         if (!data.length) return '';
 
         const headers = Object.keys(data[0] as object).reduce<string[]>(
@@ -338,16 +350,16 @@ export class DefaultCSVAdapter implements CSVAdapter {
             []
         );
 
-        const headerRow = headers.join(delimiter);
+        const headerRow = headers.join(config.delimiter);
 
         const rows = data.map((row) => {
             return headers
                 .map((header) => {
                     let value = String((row as any)[header] ?? '');
                     value = value.replace(/\n/g, ' ').replace(/"/g, '""');
-                    return useQuotes ? `"${value}"` : value;
+                    return config.hasQuotes ? `"${value}"` : value;
                 })
-                .join(delimiter);
+                .join(config.delimiter);
         });
 
         return [headerRow, ...rows].join('\n');

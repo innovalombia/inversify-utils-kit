@@ -49,7 +49,7 @@ export interface CSVParseResult<T = any> {
 export interface CSVFindResult<T = any> {
     rowNumber: number;
     row: T;
-    header: string;
+    headers: string[];
 }
 
 /** Result of updateRow */
@@ -70,7 +70,10 @@ export interface CSVAdapter {
      * Searches all rows for entries where `key` equals `value`.
      * Returns every match with its rowNumber and the matched header.
      */
-    find<T>(rows: T[], key: keyof T, value: unknown): CSVFindResult<T>[];
+    find<T>(
+        rows: { [key: string]: any }[],
+        keyword: string
+    ): CSVFindResult<T>[];
     /**
      * Updates the row at `rowNumber` (2-based, same as parse/find convention)
      * after validating each field in `data` against `inferredTypes`.
@@ -83,7 +86,7 @@ export interface CSVAdapter {
         inferredTypes: Record<string, CSVColumnType>,
         required?: boolean
     ): CSVUpdateResult<T>;
-    export<T>(data: T[], delimiter: CSVDelimiter, useQuotes: boolean): string;
+    export<T>(data: T[], config: CSVConfig): string;
 }
 
 export const CSV_ADAPTER_TYPE = Symbol('CSV_ADAPTER_TYPE');
