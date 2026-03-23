@@ -54,11 +54,11 @@ export class DefaultCSVAdapter implements CSVAdapter {
         if (!value) return 'string';
 
         // Leading zero: "01889381" must be treated as string
-        if (/^0\d+/.test(value)) return 'string';
-
+        if (/^0\d+/.test(value) || /^\d+\.\d*0+$/.test(value)) {
+            return 'string';
+        }
         // Boolean: exact matches only
-        if (['true', 'false', '1', '0'].includes(value.toLowerCase()))
-            return 'boolean';
+        if (['true', 'false'].includes(value.toLowerCase())) return 'boolean';
 
         // Number
         const num = Number(value);
@@ -84,14 +84,18 @@ export class DefaultCSVAdapter implements CSVAdapter {
         };
         return rank[next] > rank[current] ? next : current;
     }
-
+    private escapeRegex(value: string): string {
+        return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    }
     private buildRegex(delimiter: string, hasQuotes: boolean): RegExp {
+        const escapedDelimiter = this.escapeRegex(delimiter);
+
         return hasQuotes
             ? new RegExp(
-                  `(?:^|${delimiter})(?:"([^"]*(?:""[^"]*)*)"|([^${delimiter}]*))`,
+                  `(?:^|${escapedDelimiter})(?:"([^"]*(?:""[^"]*)*)"|([^${escapedDelimiter}]*))`,
                   'g'
               )
-            : new RegExp(`([^${delimiter}]+)`, 'g');
+            : new RegExp(`([^${escapedDelimiter}]+)`, 'g');
     }
 
     private parseValue(value: unknown, expectedType: CSVColumnType): unknown {
@@ -374,15 +378,20 @@ export class DefaultCSVAdapter implements CSVAdapter {
     export<T>(data: T[], config: CSVConfig): string {
         if (!data.length) return '';
 
-        const headers = Object.keys(data[0] as object).reduce<string[]>(
-            (acc, key) => {
-                if (key !== '__rowNumber') acc.push(key);
-                return acc;
+        const [headers, headersResult] = Object.keys(data[0] as object).reduce<
+            [string[], string[]]
+        >(
+            ([headersAcc, headersAccResult], key) => {
+                if (key !== '__rowNumber') {
+                    headersAcc.push(key);
+                    headersAccResult.push(config.hasQuotes ? `"${key}"` : key);
+                }
+                return [headersAcc, headersAccResult];
             },
-            []
+            [[], []]
         );
 
-        const headerRow = headers.join(config.delimiter);
+        const headerRow = headersResult.join(config.delimiter);
 
         const rows = data.map((row) => {
             return headers

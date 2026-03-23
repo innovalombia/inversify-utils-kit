@@ -43,12 +43,6 @@ export class DefaultStringUtilsAdapter implements StringUtilsAdapter {
         return word.charAt(0).toUpperCase() + word.slice(1);
     }
 
-    private regexToArrayString(input: string, regex: RegExp): string[] {
-        return input
-            .match(regex)
-            .filter(Boolean)
-            .map((word: string) => word.toLowerCase());
-    }
     private arrayStringToCamelCase(arrayString: string[]): string {
         return arrayString
             .map((word, index) => {
@@ -97,10 +91,10 @@ export class DefaultStringUtilsAdapter implements StringUtilsAdapter {
             .map((word) => word.toLowerCase());
     }
     camelCaseToArrayString(word: string): string[] {
-        return word
-            .match(/([A-Z]?[^A-Z]*)/g)
-            .filter(Boolean)
-            .map((word: string) => word.toLowerCase());
+        const result = word.match(/([A-Z]?[^A-Z]*)/g);
+        if (!result) return [];
+
+        return result.filter(Boolean).map((word: string) => word.toLowerCase());
     }
     snakeCaseToArrayString(word: string): string[] {
         return word
@@ -177,10 +171,13 @@ export class DefaultStringUtilsAdapter implements StringUtilsAdapter {
             [StringCases.KEBAB_CASE]: this.kebabCaseToArrayString,
             [StringCases.PASCAL_CASE]: this.pascalCaseToArrayString,
             [StringCases.MONEY_CASE]: this.simpleStringToArrayCase,
-            [StringCases.NUMBER_CASE]: this.simpleStringToArrayCase
+            [StringCases.NUMBER_CASE]: this.simpleStringToArrayCase,
+            [StringCases.SEPARATED_BY_SPACES_CASE]:
+                this.undefinedCaseToArrayCase
         };
         const handler: (w: string) => string[] =
-            mapFunctions[stringCase] || this.undefinedCaseToArrayCase;
+            mapFunctions[stringCase as StringCases] ||
+            this.undefinedCaseToArrayCase;
         return {
             arrayString: handler(word),
             stringCase

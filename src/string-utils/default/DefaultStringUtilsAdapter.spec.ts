@@ -2,12 +2,13 @@ import 'reflect-metadata';
 
 import {
     CannotBeDeterminedStringCase,
-    StringCases
+    StringCases,
+    StringUtilsAdapter
 } from '../StringUtilsAdapter';
 import { DefaultStringUtilsAdapter } from './DefaultStringUtilsAdapter';
 
 describe('DefaultStringUtilsAdapter Test Suite', () => {
-    let adapter: DefaultStringUtilsAdapter;
+    let adapter: StringUtilsAdapter;
 
     beforeEach(() => {
         adapter = new DefaultStringUtilsAdapter();
