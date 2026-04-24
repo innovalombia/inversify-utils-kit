@@ -95,7 +95,10 @@ export class DefaultCSVAdapter implements CSVAdapter {
                   `(?:^|${escapedDelimiter})(?:"([^"]*(?:""[^"]*)*)"|([^${escapedDelimiter}]*))`,
                   'g'
               )
-            : new RegExp(`([^${escapedDelimiter}]+)`, 'g');
+            : new RegExp(
+                  `(?:^|${escapedDelimiter})([^${escapedDelimiter}]*)`,
+                  'g'
+              );
     }
 
     private parseValue(value: unknown, expectedType: CSVColumnType): unknown {
@@ -206,15 +209,25 @@ export class DefaultCSVAdapter implements CSVAdapter {
         const validationErrors: ValidationError[] = [];
         const regex = this.buildRegex(delimiter, hasQuotes);
 
-        // --- Infer column types from the first 10 data rows ---
+        // --- Infer column types from a random sample of rows ---
         const inferredTypes: Record<string, CSVColumnType> = {};
+        const SAMPLE_SIZE = 50;
+        const sample =
+            dataRows.length <= SAMPLE_SIZE
+                ? dataRows
+                : Array.from(
+                      { length: SAMPLE_SIZE },
+                      () =>
+                          dataRows[Math.floor(Math.random() * dataRows.length)]
+                  );
 
-        dataRows.slice(0, 10).forEach((line) => {
+        sample.forEach((line) => {
             const values = this.splitLine(line, regex);
             headers.forEach((header, i) => {
                 const raw = values[i] ?? '';
                 if (!raw) return;
                 const detected = this.inferValueType(raw);
+                // Strict: once a column has a type, any mismatch forces it up to string
                 inferredTypes[header] = inferredTypes[header]
                     ? this.mergeColumnType(inferredTypes[header], detected)
                     : detected;
