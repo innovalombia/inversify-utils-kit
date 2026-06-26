@@ -1,272 +1,282 @@
-# Inversify-utils-kit
+# inversify-utils-kit
 
-Some utilities to manage dates, json, currencies formatters and strings using injectable adapters with inversify.
+[![npm version](https://img.shields.io/npm/v/inversify-utils-kit.svg)](https://www.npmjs.com/package/inversify-utils-kit)
+[![license](https://img.shields.io/npm/l/inversify-utils-kit.svg)](https://github.com/innovalombia/inversify-utils-kit/blob/main/LICENSE)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.x-blue.svg)](https://www.typescriptlang.org/)
+[![Node.js](https://img.shields.io/badge/node-%3E%3D18.18.0-brightgreen.svg)](https://nodejs.org/)
 
-## Index
+A collection of **injectable utility adapters** for [Inversify](https://inversify.io/) — swap implementations without changing your business logic.
 
-1. [Setup](#setup)
-2. [Use](#use)
-3. [Manage repository](#manage-repository)
-4. [Versioning](#versioning)
+---
 
-## Setup 🔨 <a name="setup"></a>
+## Why?
 
--   Install package
+Working with dates, strings, JSON, CSV, or currency formatting in a large TypeScript project? You probably don't want your business logic tightly coupled to `luxon`, `numeral`, or any other specific library. **inversify-utils-kit** gives you clean adapter interfaces you can bind in your IoC container and swap at will — perfect for testing, multi-environment support, or migrating between libraries.
 
-```sh
-npm i inversify & npm i inversify-utils-kit
+## Features
+
+| Adapter | Interface | Default Implementation | Peer Dependency |
+|---|---|---|---|
+| **Dates** | `DatesAdapter` | `LuxonDatesAdapter` | `luxon` |
+| **JSON** | `JsonAdapter` | `DefaultJsonAdapter` | — |
+| **Strings** | `StringUtilsAdapter` | `DefaultStringUtilsAdapter` | — |
+| **CSV** | `CSVAdapter` | `DefaultCSVAdapter` | — |
+| **Money** | `MoneyFormatterAdapter` | `NumeralMoneyFormatterAdapter` | `numeral` |
+
+## Installation
+
+```bash
+npm install inversify-utils-kit inversify reflect-metadata
 ```
 
-## Use 🧑‍🔧 <a name="use"></a>
+Install peer dependencies based on the adapters you need:
 
-### Lambda functions
+```bash
+# Dates adapter
+npm install luxon
 
-- Create config file (config/index.ts)
+# Money formatter
+npm install numeral
+
+# CSV export to YAML (optional)
+npm install yaml
+
+# Decimal precision (optional)
+npm install decimal.js
+```
+
+## Quick Start
+
+### 1. Configure the container
 
 ```ts
 import 'reflect-metadata';
-
 import { Container } from 'inversify';
 import {
-    DefaultJsonAdapter,
-    JSON_ADAPTER_TYPE,
-    type JsonAdapter
+  JSON_ADAPTER_TYPE,
+  JsonAdapter,
+  DefaultJsonAdapter,
+  DATES_ADAPTER_TYPE,
+  DatesAdapter,
+  LuxonDatesAdapter,
+  TIMEZONE_DATES_ADAPTER_CONST_TYPE,
+  LANG_DATES_ADAPTER_CONST_TYPE
 } from 'inversify-utils-kit';
 
-const AppContainer: Container = new Container();
+const container = new Container();
 
-AppContainer.bind<JsonAdapter>(JSON_ADAPTER_TYPE).to(DefaultJsonAdapter);
+// JSON adapter (no peer deps needed)
+container.bind<JsonAdapter>(JSON_ADAPTER_TYPE).to(DefaultJsonAdapter);
 
-export { AppContainer };
+// Dates adapter (requires luxon)
+container.bind<DatesAdapter>(DATES_ADAPTER_TYPE).to(LuxonDatesAdapter);
+container.bind<string>(TIMEZONE_DATES_ADAPTER_CONST_TYPE).toConstantValue('America/New_York');
+container.bind<string>(LANG_DATES_ADAPTER_CONST_TYPE).toConstantValue('en');
+
+export { container };
 ```
 
-- Entry point with handler function (main.ts)
+### 2. Use in your services
 
 ```ts
-import {
-    JSON_ADAPTER_TYPE,
-    type JsonAdapter
-} from 'inversify-utils-kit';
+import { injectable, inject } from 'inversify';
+import { JSON_ADAPTER_TYPE, JsonAdapter } from 'inversify-utils-kit';
 
-import { AppContainer } from './config';
+@injectable()
+export class OrderService {
+  constructor(
+    @inject(JSON_ADAPTER_TYPE) private json: JsonAdapter
+  ) {}
+
+  parseOrder(raw: string) {
+    const { result, reasonForInvalidity } = this.json.deserializeJson(raw);
+    if (reasonForInvalidity) throw new Error(reasonForInvalidity);
+    return result;
+  }
+}
+```
+
+## API Reference
+
+### DatesAdapter
+
+Bind with `DATES_ADAPTER_TYPE`. Default: `LuxonDatesAdapter`.
+
+| Method | Description |
+|---|---|
+| `now()` | Current timestamp in milliseconds |
+| `fromString(date)` | Parse a date string to epoch ms |
+| `fromFormat(input, format, isLocal?)` | Parse with a specific format |
+| `fromUnix(input)` | Parse Unix timestamps (seconds, ms, μs, ns) |
+| `toFormat(epoch, format?)` | Format epoch ms to string |
+| `toISO(epoch)` | Convert to ISO 8601 string |
+| `toUTC(epoch)` | Convert to UTC ISO string |
+| `toUnix(epoch)` | Convert to Unix seconds |
+| `toLocal(epoch)` | Convert to local ISO string |
+| `plus(epoch, duration)` | Add days/hours/minutes/seconds |
+| `minus(epoch, duration)` | Subtract days/hours/minutes/seconds |
+| `fromDateUTCtoLocalDate(utcDate, format?)` | UTC string to formatted local date |
+| `fromDateISOtoLocalDate(isoDate, format?)` | ISO string to formatted local date |
+| `currentDatePlusToLocalDate(duration, format?)` | Now + duration, formatted |
+
+**Constants for timezone and locale:**
+
+```ts
+container.bind<string>(TIMEZONE_DATES_ADAPTER_CONST_TYPE).toConstantValue('Europe/Madrid');
+container.bind<string>(LANG_DATES_ADAPTER_CONST_TYPE).toConstantValue('es');
+```
+
+### JsonAdapter
+
+Bind with `JSON_ADAPTER_TYPE`. Default: `DefaultJsonAdapter`.
+
+| Method | Description |
+|---|---|
+| `parseStringToJson(input)` | Parse JSON string to object (tolerant of trailing commas) |
+| `parseJsonToString(input, pretty?)` | Stringify an object |
+| `parseJsonStringToString(input, pretty?)` | Re-format a JSON string |
+| `deserializeJson(input)` | Deserialize escaped/quoted JSON |
+| `serializeJson(input, escapeQuotes?)` | Serialize with optional quote escaping |
+
+All methods return `{ result, reasonForInvalidity }` — no exceptions thrown.
+
+### StringUtilsAdapter
+
+Bind with `STRING_UTILS_ADAPTER_TYPE`. Default: `DefaultStringUtilsAdapter`.
+
+| Method | Description |
+|---|---|
+| `checkStringCase(word)` | Detect the case convention of a string |
+| `textCaseToCamelCase(word)` | Convert any case to `camelCase` |
+| `textCaseToPascalCase(word)` | Convert any case to `PascalCase` |
+| `textCaseToSnakeCase(word, upper?)` | Convert to `snake_case` or `UPPER_SNAKE_CASE` |
+| `textCaseToKebabCase(word)` | Convert to `kebab-case` |
+| `textCaseToAllCases(word)` | Get all case conversions at once |
+| `toCapitalize(payload)` | Capitalize each word |
+| `toSimpleCapitalize(word)` | Capitalize first letter only |
+
+**Supported case detection:**
+
+`camelCase` · `PascalCase` · `snake_case` · `UPPER_SNAKE_CASE` · `kebab-case` · `UPPER CASE` · `lower case` · `Capitalize Case` · `money (1,000.00)` · `number (1000)`
+
+### CSVAdapter
+
+Bind with `CSV_ADAPTER_TYPE`. Default: `DefaultCSVAdapter`.
+
+| Method | Description |
+|---|---|
+| `identifyConfig(input)` | Auto-detect delimiter, quotes, and header presence |
+| `parse(config, input, schema?)` | Parse CSV to typed objects with validation |
+| `find(rows, keyword)` | Search all rows for a keyword match |
+| `updateRow(rows, rowNumber, data, types, required?)` | Immutably update a row with type validation |
+| `export(data, config)` | Convert objects back to CSV string |
+
+```ts
+import { CSV_ADAPTER_TYPE, CSVAdapter } from 'inversify-utils-kit';
+
+const csv = container.get<CSVAdapter>(CSV_ADAPTER_TYPE);
+
+const config = csv.identifyConfig(rawCsv);
+if (config.success && config.result) {
+  const { result, errors, inferredTypes } = csv.parse(config.result, rawCsv);
+  console.log(result);    // Typed objects with __rowNumber
+  console.log(errors);    // Validation errors (if any)
+}
+```
+
+### MoneyFormatterAdapter
+
+Bind with `MONEY_FORMATTER_ADAPTER_TYPE`. Default: `NumeralMoneyFormatterAdapter`.
+
+| Method | Description |
+|---|---|
+| `toMoneyFormat(money)` | Format number as currency string (`$ 1,000.00`) |
+
+## Usage Examples
+
+### AWS Lambda
+
+```ts
+import { JSON_ADAPTER_TYPE, JsonAdapter } from 'inversify-utils-kit';
+import { container } from './config';
 
 let jsonAdapter: JsonAdapter;
 
-export const handler = async (event: any, context: any): Promise<any> => {
-    try {
-        jsonAdapter =
-            jsonAdapter ?? AppContainer.get<JsonAdapter>(JSON_ADAPTER_TYPE);
-        return jsonAdapter.deserializeJson(event.body).result;
-    } catch (error) {
-        logger.error('Error index %o', error);
-        throw error;
-    }
+export const handler = async (event: any) => {
+  jsonAdapter = jsonAdapter ?? container.get<JsonAdapter>(JSON_ADAPTER_TYPE);
+  return jsonAdapter.deserializeJson(event.body).result;
 };
-
 ```
 
-- Classes that need the adapter
+### Vue 3
 
 ```ts
-import 'reflect-metadata';
-
-import {
-    JSON_ADAPTER_TYPE,
-    type JsonAdapter
-} from 'inversify-utils-kit';
-
-@injectable()
-export class MainServiceImpl {
-    constructor(
-        @inject(JSON_ADAPTER_TYPE) private jsonAdapter: JsonAdapter,
-    ) {}
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    processData(event: { body: string }): any {
-        return jsonAdapter.deserializeJson(event.body).result;
-    }
-}
-
-```
-
-
-### Vue 3 projects
-
-- Create config file (config/index.ts)
-
-```ts
-import 'reflect-metadata';
-
-import { Container } from 'inversify';
-import {
-    DATES_ADAPTER_TYPE,
-    type DatesAdapter,
-    LANG_DATES_ADAPTER_CONST_TYPE,
-    LuxonDatesAdapter,
-    TIMEZONE_DATES_ADAPTER_CONST_TYPE
-} from 'inversify-utils-kit';
-
-const AppContainer: Container = new Container();
-
-AppContainer.bind<DatesAdapter>(DATES_ADAPTER_TYPE).to(LuxonDatesAdapter);
-AppContainer.bind<string>(TIMEZONE_DATES_ADAPTER_CONST_TYPE).toConstantValue(
-    Intl.DateTimeFormat().resolvedOptions().timeZone
-);
-AppContainer.bind<string>(LANG_DATES_ADAPTER_CONST_TYPE).toConstantValue(
-    navigator.language
-);
-
-export { AppContainer };
-```
-
-- Entry point for vue application (main.ts)
-
-```ts
-import { DATES_ADAPTER_TYPE, type DatesAdapter } from 'inversify-utils-kit';
+// main.ts
+import { DATES_ADAPTER_TYPE, DatesAdapter } from 'inversify-utils-kit';
 import { createApp } from 'vue';
-
-import App from './App.vue';
-import { AppContainer } from './config';
-import router from './router';
+import { container } from './config';
 
 const app = createApp(App);
-app.use(router);
-
-const datesAdapter = AppContainer.get<DatesAdapter>(DATES_ADAPTER_TYPE);
+const datesAdapter = container.get<DatesAdapter>(DATES_ADAPTER_TYPE);
 app.provide('datesAdapter', datesAdapter);
-
 app.mount('#app');
 ```
-
-- Vue component
 
 ```vue
 <script lang="ts" setup>
 import type { DatesAdapter } from 'inversify-utils-kit';
-import { inject, onMounted, ref } from 'vue';
+import { inject, ref } from 'vue';
 
 const datesAdapter = inject('datesAdapter') as DatesAdapter;
-
-const posix = datesAdapter.toUnix(datesAdapter.now());
-const posixDate = ref(posix);
-
-const updateDate = () => {
-    const posix = datesAdapter.toUnix(datesAdapter.now());
-    posixDate.value = posix;
-};
+const posixDate = ref(datesAdapter.toUnix(datesAdapter.now()));
 </script>
 ```
 
-## Manage repository 🤳 <a name="manage-repository"></a>
+### NestJS / Express
 
--   Install dependencies
+```ts
+import { injectable, inject } from 'inversify';
+import { STRING_UTILS_ADAPTER_TYPE, StringUtilsAdapter } from 'inversify-utils-kit';
 
-```sh
-npm i
+@injectable()
+export class NamingService {
+  constructor(
+    @inject(STRING_UTILS_ADAPTER_TYPE) private strings: StringUtilsAdapter
+  ) {}
+
+  toApiFormat(name: string): string {
+    return this.strings.textCaseToSnakeCase(name);
+  }
+
+  toDtoFormat(name: string): string {
+    return this.strings.textCaseToCamelCase(name);
+  }
+}
 ```
 
--   Check code by linter
+## Binding Symbols
 
-```sh
-npm run lint
-```
+| Symbol | Adapter |
+|---|---|
+| `JSON_ADAPTER_TYPE` | `JsonAdapter` |
+| `DATES_ADAPTER_TYPE` | `DatesAdapter` |
+| `TIMEZONE_DATES_ADAPTER_CONST_TYPE` | Timezone string constant |
+| `LANG_DATES_ADAPTER_CONST_TYPE` | Locale string constant |
+| `STRING_UTILS_ADAPTER_TYPE` | `StringUtilsAdapter` |
+| `CSV_ADAPTER_TYPE` | `CSVAdapter` |
+| `MONEY_FORMATTER_ADAPTER_TYPE` | `MoneyFormatterAdapter` |
 
--   Check and fix code by linter
+## Requirements
 
-```sh
-npm run lint:fix
-```
+- **Node.js** >= 18.18.0
+- **TypeScript** >= 5.x
+- **inversify** >= 6.x
+- **reflect-metadata**
 
--   Check style code
+## Contributing
 
-```sh
-npm run prettier
-```
+See [CONTRIBUTING.md](CONTRIBUTING.md) for development setup, coding standards, and release process.
 
--   Check and fix style code
+## License
 
-```sh
-npm run prettier:write
-```
-
--   Get coverage test terminal
-
-```sh
-npm run coverage
-```
-
--   Build package
-
-```sh
-npm run build
-```
-
--   Get increment version
-
-```sh
-npm run up
-```
-
--   Setup token
-
-```sh
-export NPM_AUTH_TOKEN=*********
-```
-
--   Upload new version
-
-```sh
-npm run upload
-```
-
-## Versioning 🔢 <a name="versioning"></a>
-
-### Major (Breaking)
-
-| Emoji | Code &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; | Description &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; |
-| ----- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 💥    | `:boom:`                                                                                                                                                                                          | Introduce breaking changes                                                                                                                                                                                                                                                                                                                                                      |
-
-### Minor (Feature)
-
-| Emoji | Code &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; | Description &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; |
-| ----- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| ✨    | `:sparkles:`                                                                                                                                                                                      | Introduce new features.                                                                                                                                                                                                                                                                                                                                                         |
-
-### Patch (Fix)
-
-| Emoji | Code &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; | Description &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; |
-| ----- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| ⚡️   | `:zap:`                                                                                                                                                                                           | Improve performance.                                                                                                                                                                                                                                                                                                                                                            |
-| 🐛    | `:bug:`                                                                                                                                                                                           | Fix a bug.                                                                                                                                                                                                                                                                                                                                                                      |
-| 🚑️   | `:ambulance:`                                                                                                                                                                                     | Critical hotfix.                                                                                                                                                                                                                                                                                                                                                                |
-| 💄    | `:lipstick:`                                                                                                                                                                                      | Add or update the UI and style files.                                                                                                                                                                                                                                                                                                                                           |
-| 🔒️   | `:lock:`                                                                                                                                                                                          | Fix security issues.                                                                                                                                                                                                                                                                                                                                                            |
-| ⬇️    | `:arrow_down:`                                                                                                                                                                                    | Downgrade dependencies.                                                                                                                                                                                                                                                                                                                                                         |
-| ⬆️    | `:arrow_up:`                                                                                                                                                                                      | Upgrade dependencies.                                                                                                                                                                                                                                                                                                                                                           |
-| 📌    | `:pushpin:`                                                                                                                                                                                       | Pin dependencies to specific versions.                                                                                                                                                                                                                                                                                                                                          |
-| 📈    | `:chart_with_upwards_trend:`                                                                                                                                                                      | Add or update analytics or track code.                                                                                                                                                                                                                                                                                                                                          |
-| ➕    | `:heavy_plus_sign:`                                                                                                                                                                               | Add a dependency.                                                                                                                                                                                                                                                                                                                                                               |
-| ➖    | `:heavy_minus_sign:`                                                                                                                                                                              | Remove a dependency.                                                                                                                                                                                                                                                                                                                                                            |
-| 🔧    | `:wrench:`                                                                                                                                                                                        | Add or update configuration files.                                                                                                                                                                                                                                                                                                                                              |
-| 🌐    | `:globe_with_meridians:`                                                                                                                                                                          | Internationalization and localization.                                                                                                                                                                                                                                                                                                                                          |
-| ✏️    | `:pencil2:`                                                                                                                                                                                       | Fix typos.                                                                                                                                                                                                                                                                                                                                                                      |
-| ⏪️   | `:rewind:`                                                                                                                                                                                        | Revert changes.                                                                                                                                                                                                                                                                                                                                                                 |
-| 📦️   | `:package:`                                                                                                                                                                                       | Add or update compiled files or packages.                                                                                                                                                                                                                                                                                                                                       |
-| 👽️   | `:alien:`                                                                                                                                                                                         | Update code due to external API changes.                                                                                                                                                                                                                                                                                                                                        |
-| 🍱    | `:bento:`                                                                                                                                                                                         | Add or update assets.                                                                                                                                                                                                                                                                                                                                                           |
-| ♿️    | `:wheelchair:`                                                                                                                                                                                    | Improve accessibility.                                                                                                                                                                                                                                                                                                                                                          |
-| 💬    | `:speech_balloon:`                                                                                                                                                                                | Add or update text and literals.                                                                                                                                                                                                                                                                                                                                                |
-| 🗃️    | `:card_file_box:`                                                                                                                                                                                 | Perform database related changes.                                                                                                                                                                                                                                                                                                                                               |
-| 🚸    | `:children_crossing:`                                                                                                                                                                             | Improve user experience / usability.                                                                                                                                                                                                                                                                                                                                            |
-| 📱    | `:iphone:`                                                                                                                                                                                        | Work on responsive design.                                                                                                                                                                                                                                                                                                                                                      |
-| 🥚    | `:egg:`                                                                                                                                                                                           | Add or update an easter egg.                                                                                                                                                                                                                                                                                                                                                    |
-| ⚗️    | `:alembic:`                                                                                                                                                                                       | Perform experiments.                                                                                                                                                                                                                                                                                                                                                            |
-| 🔍️   | `:mag:`                                                                                                                                                                                           | Improve SEO.                                                                                                                                                                                                                                                                                                                                                                    |
-| 🏷️    | `:label:`                                                                                                                                                                                         | Add or update types.                                                                                                                                                                                                                                                                                                                                                            |
-| 🚩    | `:triangular_flag_on_post:`                                                                                                                                                                       | Add, update, or remove feature flags.                                                                                                                                                                                                                                                                                                                                           |
-| 🥅    | `:goal_net:`                                                                                                                                                                                      | Catch errors.                                                                                                                                                                                                                                                                                                                                                                   |
-| 💫    | `:dizzy:`                                                                                                                                                                                         | Add or update animations and transitions.                                                                                                                                                                                                                                                                                                                                       |
-| 🗑️    | `:wastebasket:`                                                                                                                                                                                   | Deprecate code that needs to be cleaned up.                                                                                                                                                                                                                                                                                                                                     |
-| 🛂    | `:passport_control:`                                                                                                                                                                              | Work on code related to authorization, roles and permissions.                                                                                                                                                                                                                                                                                                                   |
-| 🩹    | `:adhesive_bandage:`                                                                                                                                                                              | Simple fix for a non-critical issue.                                                                                                                                                                                                                                                                                                                                            |
-| 👔    | `:necktie:`                                                                                                                                                                                       | Add or update business logic                                                                                                                                                                                                                                                                                                                                                    |
+[ISC](LICENSE)
