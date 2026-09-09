@@ -1,5 +1,7 @@
 import 'reflect-metadata';
 
+import { Settings } from 'luxon';
+
 import { LuxonDatesAdapter } from './LuxonDatesAdapter';
 
 describe('LuxonDatesAdapter Test Suite', () => {
@@ -50,6 +52,36 @@ describe('LuxonDatesAdapter Test Suite', () => {
                 true
             );
             expect(result).toBe(1706796000000);
+        });
+    });
+
+    describe('test for toFormat and toLocal with an explicit timezone', () => {
+        // Regression: toFormat/toLocal must honor `this.TIMEZONE` instead of
+        // the process/system timezone. These tests force Luxon's default
+        // zone to UTC (as it would be on a CI runner) so the assertions
+        // don't depend on the machine's own local timezone.
+        const epoch = 1757178720000; // 2025-09-06T17:12:00.000Z
+
+        let originalDefaultZone: string;
+
+        beforeEach(() => {
+            originalDefaultZone = Settings.defaultZone.name;
+            Settings.defaultZone = 'utc';
+            adapter = new LuxonDatesAdapter('America/Bogota', 'es');
+        });
+
+        afterEach(() => {
+            Settings.defaultZone = originalDefaultZone;
+        });
+
+        it('should format the epoch using the injected timezone, not the system one', () => {
+            const result = adapter.toFormat(epoch, 'dd/MM/yyyy HH:mm:ss');
+            expect(result).toBe('06/09/2025 12:12:00');
+        });
+
+        it('should convert the epoch to ISO using the injected timezone, not the system one', () => {
+            const result = adapter.toLocal(epoch);
+            expect(result).toBe('2025-09-06T12:12:00.000-05:00');
         });
     });
 });

@@ -112,15 +112,26 @@ export class LuxonDatesAdapter implements DatesAdapter {
     }
 
     toFormat(epoch: number, format = SETTINGS.DEFAULT_DATE_FORMAT): string {
-        return DateTime.fromMillis(epoch).setLocale(this.LANG).toFormat(format);
+        return DateTime.fromMillis(epoch)
+            .setZone(this.TIMEZONE)
+            .setLocale(this.LANG)
+            .toFormat(format);
     }
 
     toUTC(epoch: number): string {
-        return DateTime.fromMillis(epoch).toUTC().toISO();
+        const iso = DateTime.fromMillis(epoch).toUTC().toISO();
+        if (iso === null) {
+            throw new InvalidDateError();
+        }
+        return iso;
     }
 
     toISO(epoch: number): string {
-        return DateTime.fromMillis(epoch).toISO();
+        const iso = DateTime.fromMillis(epoch).toISO();
+        if (iso === null) {
+            throw new InvalidDateError();
+        }
+        return iso;
     }
 
     toUnix(epoch: number): number {
@@ -128,7 +139,11 @@ export class LuxonDatesAdapter implements DatesAdapter {
     }
 
     toLocal(epoch: number): string {
-        return DateTime.fromMillis(epoch).setLocale(this.TIMEZONE).toISO();
+        const iso = DateTime.fromMillis(epoch).setZone(this.TIMEZONE).toISO();
+        if (iso === null) {
+            throw new InvalidDateError();
+        }
+        return iso;
     }
 
     plus(
